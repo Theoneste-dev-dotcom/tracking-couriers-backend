@@ -1,4 +1,5 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Role } from '../enums/role.enum';
 
 @Entity()
 export class User {
@@ -8,11 +9,15 @@ export class User {
   @Column()
   username: string;
 
-  @Column()
+  @Column({unique: true})
   email: string;
 
   @Column()
   password: string;
-  @Column()
-  role: string;
+  @Column( {
+    type :'enum',
+    enum: Role,
+    default: Role.CLIENT
+  })
+  role: Role;
 }
