@@ -1,6 +1,0 @@
-export enum Status {
-  CREATED = 'CREATED',
-  ASSIGNED = 'ASSIGNED',
-  IN_TRANSIT = 'IN_TRANSIT',    
-  DELIVERED = 'DELIVERED',
-}
