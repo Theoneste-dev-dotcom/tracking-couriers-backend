@@ -5,11 +5,13 @@ import { CompaniesModule } from './modules/companies/companies.module';
 import { ShipmentsModule } from './modules/shipments/shipments.module'
 import { TrackingModule } from './modules/tracking/tracking.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { TypeOrmModule, TypeOrmOptionsFactory } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 
 const db_port = parseInt(process.env.DB_PORT || "5432")
+
+
 
 @Module({
   imports: [
@@ -17,18 +19,20 @@ const db_port = parseInt(process.env.DB_PORT || "5432")
       isGlobal: true,
       envFilePath: '.env',
     }),
-    TypeOrmModule.forRoot({
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
         type: 'postgres',
-        host: 'localhost',
-        port: 5432,
-        username: 'postgres',
-        password: 'theo123',
-        database: 'couriers_system',
-        entities: [], 
-        synchronize: false,
-        logging: true,
-    
-
+        host: configService.get<string>('DB_HOST'),
+        port: configService.get<number>('DB_PORT'),
+        username: configService.get<string>('DB_USER'),
+        password: configService.get<string>('DB_PASSWORD'),
+        database: configService.get<string>('DB_NAME'),
+        entities: [__dirname + '/**/*.entity{.ts,.js}'], 
+        synchronize: true, 
+        logging: configService.get<boolean>('LOGGING', true), 
+      }),
+      inject: [ConfigService],
     }),
     AuthModule,
     UsersModule,
