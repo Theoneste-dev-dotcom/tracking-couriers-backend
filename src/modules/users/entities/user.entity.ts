@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, ManyToMany, JoinTable } from 'typeorm';
 import { Company } from '../../companies/entities/company.entity';
 import { IsString } from 'class-validator';
 import { Role } from 'src/common/enums/role.enum';
@@ -21,11 +21,21 @@ export class User {
   role: Role;
 
   @Column()
-  phone: string;
+  phone?: string;
 
-  @ManyToOne(() => Company, (company) => company.users, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'company_id' })
-  company: Company;
+  @ManyToMany(() => Company, (company) => company.users)
+  @JoinTable({
+    name: 'user_companies', // Name of the join table
+    joinColumn: {
+      name: 'user_id',
+      referencedColumnName: 'id',
+    },
+    inverseJoinColumn: {
+      name: 'company_id',
+      referencedColumnName: 'id',
+    },
+  })
+  companies: Company[];
 
   @CreateDateColumn()
   createdAt: Date;

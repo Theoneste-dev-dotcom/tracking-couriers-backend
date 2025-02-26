@@ -41,6 +41,9 @@ export class UserService {
       'New User Created Successfull!! ',
       user.email,
       user.role,
+      user.phone,
+      user.name,
+      user.company.id      
     );
   }
 
@@ -49,6 +52,9 @@ export class UserService {
     const responseUsers: UserResponseDto[] = users.map((user) => ({
       email: user.email,
       role: user.role,
+      phone: user.phone,
+      company_id: user.company.id,
+      name: user.name
     }));
 
     return responseUsers;
@@ -59,7 +65,7 @@ export class UserService {
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    return new UserResponseDto(user.email, user.role)
+    return new UserResponseDto(user.email, user.role, user.phone, user.company.id, user.name)
   }
 
   async findUser(id:number):Promise<User> {
@@ -112,6 +118,9 @@ export class UserService {
     const userResponseDto: UserResponseDto = {
       email: user.email,
       role: user.role,
+      phone: user.phone,
+      company_id: user.company.id,
+      name: user.name
     };
 
     return userResponseDto;

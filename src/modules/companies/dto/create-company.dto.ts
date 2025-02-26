@@ -19,4 +19,5 @@ export class CreateCompanyDto {
 
   @IsEnum(SubscriptionPlan, { message: 'Invalid subscription plan' })
   subscriptionPlan: SubscriptionPlan;
+
 }

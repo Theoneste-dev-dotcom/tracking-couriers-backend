@@ -24,14 +24,14 @@ export class Company {
     enum: SubscriptionPlan,
     default: SubscriptionPlan.FREE,
   })
-  subscriptionPlan: SubscriptionPlan;
+  subscriptionPlan?: SubscriptionPlan;
   
-  @OneToMany(() => User, (user)=> user.company)
-  users:User[]
-  
-  @CreateDateColumn()
+  @OneToMany(() => User, (user)=> user.companies)
+  users?:User[]
+
+  @CreateDateColumn({default: Date.now()})
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({default: Date.now()})
   updatedAt: Date;
 }
