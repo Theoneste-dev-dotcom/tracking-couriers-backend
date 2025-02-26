@@ -10,6 +10,7 @@ import * as bcrypt from 'bcryptjs';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { SignupResponseDto } from './dto/signup-response.dto';
 
 @Injectable()
 export class UserService {
@@ -18,7 +19,7 @@ export class UserService {
     private usersRepository: Repository<User>,
   ) {}
 
-  async createUser(createUserDto: CreateUserDto): Promise<User> {
+  async createUser(createUserDto: CreateUserDto): Promise<SignupResponseDto> {
     const existingUser = await this.usersRepository.findOne({
       where: { email: createUserDto.email },
     });
@@ -33,7 +34,9 @@ export class UserService {
       password: hashedPassword,
       role,
     });
-    return this.usersRepository.save(user);
+     await this.usersRepository.save(user);
+
+     return new SignupResponseDto("New User Created Successfull!! ",user.email, user.role)
   }
 
   findAll(): Promise<User[]> {
