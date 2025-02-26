@@ -1,10 +1,17 @@
-import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Not, Repository } from 'typeorm';
+import { LessThan, Not, Repository } from 'typeorm';
 import { Company } from './entities/company.entity';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 import { CompanyResponseDto } from './dto/company-response.dto';
+import { SubscriptionPlan } from 'src/common/enums/subscription-plan.enum';
+import { removeAllListeners } from 'process';
 
 @Injectable()
 export class CompaniesService {
@@ -13,8 +20,12 @@ export class CompaniesService {
     private readonly companyRepository: Repository<Company>,
   ) {}
 
-  async create(createCompanyDto: CreateCompanyDto): Promise<CompanyResponseDto> {
-    const existingCompany = await this.companyRepository.findOne({ where: { email: createCompanyDto.email } });
+  async create(
+    createCompanyDto: CreateCompanyDto,
+  ): Promise<CompanyResponseDto> {
+    const existingCompany = await this.companyRepository.findOne({
+      where: { email: createCompanyDto.email },
+    });
 
     if (existingCompany) {
       throw new BadRequestException('A company with this email already exists');
@@ -38,9 +49,12 @@ export class CompaniesService {
     return company;
   }
 
-  async update(id: number, updateCompanyDto: UpdateCompanyDto): Promise<CompanyResponseDto> {
+  async update(
+    id: number,
+    updateCompanyDto: UpdateCompanyDto,
+  ): Promise<CompanyResponseDto> {
     const company = await this.findOne(id);
-    
+
     if (!company) {
       throw new NotFoundException(`Company with ID ${id} not found`);
     }
@@ -53,16 +67,18 @@ export class CompaniesService {
     }
   }
 
-  async findCompany(id:number):Promise<Company> {
-    const companyFound = await this.companyRepository.findOne({where: {id}})
+  async findCompany(id: number): Promise<Company> {
+    const companyFound = await this.companyRepository.findOne({
+      where: { id },
+    });
     if (!companyFound) {
       throw new NotFoundException(`Company with ID ${id} not found`);
     }
-    return companyFound
+    return companyFound;
   }
   async remove(id: number): Promise<void> {
     const company = await this.findCompany(id);
-    
+
     if (!company) {
       throw new NotFoundException(`Company with ID ${id} not found`);
     }
@@ -72,5 +88,80 @@ export class CompaniesService {
     } catch (error) {
       throw new InternalServerErrorException('Failed to remove company');
     }
+  }
+
+  async initializeCompany(companyId: number): Promise<Company> {
+    const company = await this.findCompany(companyId);
+
+    // set a 2-weeks trial period for new companies
+    const now = new Date();
+    const expiryDate = new Date(now.setDate(now.getDate() + 14));
+
+    company.subscriptionPlan = SubscriptionPlan.FREE_TRIAL;
+    company.subscriptionExpiry = expiryDate;
+
+    return this.companyRepository.save(company);
+  }
+
+  async updateSubscription(
+    companyId: number,
+    plan: SubscriptionPlan,
+  ): Promise<Company> {
+    const company = await this.findCompany(companyId);
+
+    let expiryDate: Date | null;
+    const now = new Date();
+
+    switch (plan) {
+      case SubscriptionPlan.BASIC:
+        expiryDate = new Date(now.setMonth(now.getMonth() + 1)); // 1 month
+        break;
+
+      case SubscriptionPlan.PREMIUM:
+        expiryDate = new Date(now.setMonth(now.getMonth() + 6)); // 6 months
+        break;
+
+      case SubscriptionPlan.FREE_TRIAL:
+        expiryDate = new Date(now.setDate(now.getDate() + 14)); // 2 weeks
+        break;
+      case SubscriptionPlan.EXPIRED:
+      default:
+        expiryDate = null; // no expry for expired accounts
+    }
+
+    company.subscriptionPlan = plan;
+    company.subscriptionExpiry = expiryDate;
+
+    return this.companyRepository.save(company);
+  }
+
+  async checkSubscriptionStatus(
+    companyId: number,
+  ): Promise<{ status: string; daysLeft?: number }> {
+    const company = await this.findCompany(companyId);
+    if (!company.subscriptionExpiry) {
+      return { status: 'expired' };
+    }
+
+    const now = new Date();
+    const remainingTime = company.subscriptionExpiry.getTime() - now.getTime();
+    const daysLeft = Math.floor(remainingTime / (1000 * 60 * 60 * 24)); // convert ms to days
+
+    if (remainingTime <= 0) {
+      return { status: 'expired' };
+    }
+
+    return { status: 'active', daysLeft };
+  }
+
+  async expireSubscriptions(): Promise<void> {
+    const now = new Date();
+    await this.companyRepository.update(
+      {
+        subscriptionExpiry: LessThan(now),
+        subscriptionPlan: SubscriptionPlan.FREE_TRIAL,
+      },
+      { subscriptionPlan: SubscriptionPlan.EXPIRED, subscriptionExpiry: null },
+    );
   }
 }

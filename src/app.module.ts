@@ -8,9 +8,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { TypeOrmModule, TypeOrmOptionsFactory } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
-
-const db_port = parseInt(process.env.DB_PORT || "5432")
-
+import { CronModule } from './cron-jobs/cron.module';
 
 
 @Module({
@@ -40,6 +38,7 @@ const db_port = parseInt(process.env.DB_PORT || "5432")
     ShipmentsModule,
     TrackingModule,
     NotificationsModule,
+    CronModule
   ],
 
   controllers:[AppController],

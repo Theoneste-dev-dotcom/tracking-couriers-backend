@@ -1,7 +1,7 @@
 export enum SubscriptionPlan {
-    FREE = 'free',
+    FREE_TRIAL = 'free_trial',
     BASIC = 'basic',
     PREMIUM = 'premium',
-    ENTERPRISE = 'enterprise',
+    EXPIRED = 'expired', // New status for expired free trials
   }
   
