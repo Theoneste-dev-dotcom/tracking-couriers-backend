@@ -22,7 +22,7 @@ export class UsersController {
   @UseGuards(AuthGuard)
   @Get(':id')
   findOne(@Param('id') id: number) {
-    return this.usersService.findOne(id);
+    return this.usersService.findOneById(id);
   }
 
   @UseGuards(AuthGuard)

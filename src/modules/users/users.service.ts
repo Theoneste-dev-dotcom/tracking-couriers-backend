@@ -11,6 +11,7 @@ import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { SignupResponseDto } from './dto/signup-response.dto';
+import { UserResponseDto } from './dto/user-response.dto';
 
 @Injectable()
 export class UserService {
@@ -34,21 +35,39 @@ export class UserService {
       password: hashedPassword,
       role,
     });
-     await this.usersRepository.save(user);
+    await this.usersRepository.save(user);
 
-     return new SignupResponseDto("New User Created Successfull!! ",user.email, user.role)
+    return new SignupResponseDto(
+      'New User Created Successfull!! ',
+      user.email,
+      user.role,
+    );
   }
 
-  findAll(): Promise<User[]> {
-    return this.usersRepository.find();
+  async findAll(): Promise<UserResponseDto[]> {
+    const users: User[] = await this.usersRepository.find();
+    const responseUsers: UserResponseDto[] = users.map((user) => ({
+      email: user.email,
+      role: user.role,
+    }));
+
+    return responseUsers;
   }
 
-  async findOne(id: number): Promise<User> {
+  async findOneById(id: number): Promise<UserResponseDto> {
     const user = await this.usersRepository.findOne({ where: { id } });
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    return user;
+    return new UserResponseDto(user.email, user.role)
+  }
+
+  async findUser(id:number):Promise<User> {
+    const user = await this.usersRepository.findOne({where: {id}});
+    if(!user) {
+      throw new NotFoundException('User not found')
+    }
+    return user
   }
 
   async findByEmail(email: string): Promise<User> {
@@ -58,10 +77,13 @@ export class UserService {
     }
     return user;
   }
-  
-  async updateRefreshToken(userId: number, refreshToken: string): Promise<void> {
+
+  async updateRefreshToken(
+    userId: number,
+    refreshToken: string,
+  ): Promise<void> {
     try {
-      const user = await this.findOne(userId);
+      const user = await this.findUser(userId);
       user.refreshToken = refreshToken;
       await this.usersRepository.save(user);
     } catch (error) {
@@ -69,17 +91,43 @@ export class UserService {
     }
   }
 
+  async update(
+    id: number,
+    updateUserDto: UpdateUserDto,
+  ): Promise<UserResponseDto> {
+    const user = await this.findUser(id);
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
 
+    try {
 
-  async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
-    const user = await this.findOne(id);
-    Object.assign(user, updateUserDto);
-    await this.usersRepository.save(user);
-    return this.findOne(id);
+      Object.assign(user, updateUserDto);
+      await this.usersRepository.save(user);
+
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to update user');
+    }
+
+    const userResponseDto: UserResponseDto = {
+      email: user.email,
+      role: user.role,
+    };
+
+    return userResponseDto;
   }
 
   async remove(id: number): Promise<void> {
-    const user = await this.findOne(id);
-    await this.usersRepository.remove(user);
+    const user = await this.findUser(id);
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    try {
+      await this.usersRepository.remove(user);
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to remove user');
+    }
   }
 }

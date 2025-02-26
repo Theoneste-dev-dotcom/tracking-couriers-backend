@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { UserService } from '../users/users.service';
 import { ConfigService } from '@nestjs/config';
+import { LoginResponseDto } from '../users/dto/login-response.dto';
 
 
 @Injectable()
@@ -21,17 +22,17 @@ export class AuthService {
     throw new UnauthorizedException('Invalid credentials');
   }
 
-  async login(user: any) {
+  async login(user: any):Promise<LoginResponseDto>{
     const payload = { email: user.email, sub: user.id, role: user.role };
     const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
     const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
 
     await this.userService.updateRefreshToken(user.id, refreshToken);
-    return { accessToken, refreshToken };
+    return new LoginResponseDto("Logged in successfull!! ", accessToken, refreshToken)
   }
 
   async refreshToken(userId: number, token: string) {
-    const user = await this.userService.findOne(userId)
+    const user = await this.userService.findUser(userId)
     if (!user || user.refreshToken !== token) {
       throw new UnauthorizedException('Invalid refresh token');
     }
