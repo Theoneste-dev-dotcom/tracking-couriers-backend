@@ -1,18 +1,31 @@
-import { IsEmail, IsEnum, IsString } from 'class-validator';
+import { IsEmail, IsEnum, IsString, IsNumber } from 'class-validator';
 import { Role } from 'src/common/enums/role.enum';
+
 export class SignupResponseDto {
+  @IsString()
   message: string;
+
+  @IsNumber()
+  id: number;
+
+  @IsString()
+  name: string;
+
+  @IsEmail()
   email: string;
+
+  @IsEnum(Role)
   role: Role;
-  name:string;
-  phone:string;
-  company_id?:number; // optional
-  
-  constructor(message:string, email: string, role: Role, phone:string, name:string, companyId:number) {
+
+  @IsString()
+  phone?: string; 
+
+  constructor(message: string, id: number, name: string, email: string, role: Role, phone?: string) {
+    this.message = message;
+    this.id = id;
+    this.name = name;
     this.email = email;
     this.role = role;
-    this.name = name;
     this.phone = phone;
-    this.company_id = companyId;
   }
 }

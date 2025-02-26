@@ -39,22 +39,22 @@ export class UserService {
 
     return new SignupResponseDto(
       'New User Created Successfull!! ',
+      user.id,
+      user.name,
       user.email,
       user.role,
-      user.phone,
-      user.name,
-      user.company.id      
+      user.phone, // optional      
     );
   }
 
   async findAll(): Promise<UserResponseDto[]> {
     const users: User[] = await this.usersRepository.find();
     const responseUsers: UserResponseDto[] = users.map((user) => ({
+      id:user.id,
+      name: user.name,
       email: user.email,
       role: user.role,
       phone: user.phone,
-      company_id: user.company.id,
-      name: user.name
     }));
 
     return responseUsers;
@@ -65,7 +65,7 @@ export class UserService {
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    return new UserResponseDto(user.email, user.role, user.phone, user.company.id, user.name)
+    return new UserResponseDto(user.id, user.name, user.email, user.role, user.phone)
   }
 
   async findUser(id:number):Promise<User> {
@@ -116,11 +116,11 @@ export class UserService {
     }
 
     const userResponseDto: UserResponseDto = {
+      id: user.id,
+      name: user.name,      
       email: user.email,
       role: user.role,
-      phone: user.phone,
-      company_id: user.company.id,
-      name: user.name
+      phone: user.phone
     };
 
     return userResponseDto;
