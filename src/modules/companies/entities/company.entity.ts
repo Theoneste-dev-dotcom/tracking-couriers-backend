@@ -1,5 +1,6 @@
 import { SubscriptionPlan } from 'src/common/enums/subscription-plan.enum';
-import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { User } from 'src/modules/users/entities/user.entity';
+import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 
 @Entity('companies')
 export class Company {
@@ -24,7 +25,10 @@ export class Company {
     default: SubscriptionPlan.FREE,
   })
   subscriptionPlan: SubscriptionPlan;
-
+  
+  @OneToMany(() => User, (user)=> user.company)
+  users:User[]
+  
   @CreateDateColumn()
   createdAt: Date;
 

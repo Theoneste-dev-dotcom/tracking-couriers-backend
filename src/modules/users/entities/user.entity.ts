@@ -1,10 +1,15 @@
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Company } from '../../companies/entities/company.entity';
+import { IsString } from 'class-validator';
 import { Role } from 'src/common/enums/role.enum';
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn()
   id: number;
+
+  @Column()
+  name: string;
 
   @Column({ unique: true })
   email: string;
@@ -12,9 +17,22 @@ export class User {
   @Column()
   password: string;
 
-  @Column({ type: 'enum', enum: Role, default: Role.CLIENT })
+  @Column()
   role: Role;
 
-  @Column({ nullable: true })
-  refreshToken: string; 
+  @Column()
+  phone: string;
+
+  @ManyToOne(() => Company, (company) => company.users, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'company_id' })
+  company: Company;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+
+  @IsString()
+  refreshToken:string;
 }
