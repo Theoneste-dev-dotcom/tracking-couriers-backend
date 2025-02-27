@@ -1,4 +1,5 @@
 import { SubscriptionPlan } from 'src/common/enums/subscription-plan.enum';
+import { Shipment } from 'src/modules/shipments/entities/shipment.entity';
 import { User } from 'src/modules/users/entities/user.entity';
 import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany, ManyToMany } from 'typeorm';
 
@@ -31,6 +32,9 @@ export class Company {
   
   @ManyToMany(() => User, (user)=> user.companies)
   users?:User[]
+
+  @OneToMany(() => Shipment, (shipment) => shipment.company)
+  shipments: Shipment[];
 
   @CreateDateColumn()
   createdAt: Date;

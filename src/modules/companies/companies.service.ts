@@ -12,6 +12,7 @@ import { UpdateCompanyDto } from './dto/update-company.dto';
 import { CompanyResponseDto } from './dto/company-response.dto';
 import { SubscriptionPlan } from 'src/common/enums/subscription-plan.enum';
 import { removeAllListeners } from 'process';
+import { Shipment } from '../shipments/entities/shipment.entity';
 
 @Injectable()
 export class CompaniesService {
@@ -163,5 +164,19 @@ export class CompaniesService {
       },
       { subscriptionPlan: SubscriptionPlan.EXPIRED, subscriptionExpiry: null },
     );
+  }
+
+   // Method to fetch shipments related to a specific company
+   async getShipmentsByCompanyId(companyId: number): Promise<Shipment[]> {
+    const company = await this.companyRepository.findOne({
+      where: { id: companyId },
+      relations: ['shipments'], // Fetch related shipments
+    });
+
+    if (!company) {
+      throw new NotFoundException(`Company with ID ${companyId} not found`);
+    }
+
+    return company.shipments; // Return the shipments associated with the company
   }
 }

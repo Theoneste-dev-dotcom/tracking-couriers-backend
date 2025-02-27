@@ -3,6 +3,7 @@ import { CompaniesService } from './companies.service';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 import { AuthGuard } from '../auth/auth.guard';
+import { Shipment } from '../shipments/entities/shipment.entity';
 
 
 @Controller('companies')
@@ -31,6 +32,11 @@ export class CompaniesController {
   @Get(':id/subscription-status')
   async checkSubscriptionStatus(@Param('id', ParseIntPipe) companyId:number) {
     return this.companiesService.checkSubscriptionStatus(companyId);
+  }
+
+  @Get(':id/shipments')
+  async getShipmentsByCompanyId(@Param('id') id: number) {
+    return this.companiesService.getShipmentsByCompanyId(id);
   }
 
   @UseGuards(AuthGuard)
