@@ -8,17 +8,17 @@ import { User } from 'src/modules/users/entities/user.entity';
 export class ShipmentUpdate {
 
   @PrimaryGeneratedColumn()
-  shipment_id: number;
+  id: number;
   
   //relationship between the shipment and shipment update
   @OneToOne(() => Shipment, (shipment) => shipment.shipmentUpdate) 
+  @JoinColumn({name: "shipment_id"})
   shipment: Shipment; 
 
   // relationship between the driver and the uesr
   @ManyToOne(() => User, { nullable: true }) 
   @JoinColumn({ name: 'driverId' }) 
   driver: User; 
-
 
   @Column()
   locationPlaceName: string;

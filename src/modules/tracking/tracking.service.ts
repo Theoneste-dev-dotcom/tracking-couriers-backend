@@ -19,7 +19,7 @@ export class TrackingService {
 
   async getShipmentUpdates(shipmentId: number) {
     return await this.trackingRepository.findOne({
-      where: { shipment_id: shipmentId },
+      where: { id: shipmentId },
     });
   }
 }

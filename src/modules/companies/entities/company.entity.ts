@@ -23,7 +23,7 @@ export class Company {
   @Column({
     type: 'enum',
     enum: SubscriptionPlan,
-    default: SubscriptionPlan.FREE_TRIAL, // FOR JUST 2 WEEKS
+    default: SubscriptionPlan.FREE_TRIAL, 
   })
   subscriptionPlan?: SubscriptionPlan;
 
