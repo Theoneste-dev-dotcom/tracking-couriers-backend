@@ -1,4 +1,4 @@
-import { IsEmail, IsEnum, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { IsDate, IsEmail, IsEnum, IsNotEmpty, IsString, MinLength } from 'class-validator';
 import { SubscriptionPlan } from 'src/common/enums/subscription-plan.enum';
 
 export class CreateCompanyDto {
@@ -19,5 +19,8 @@ export class CreateCompanyDto {
 
   @IsEnum(SubscriptionPlan, { message: 'Invalid subscription plan' })
   subscriptionPlan: SubscriptionPlan;
+
+  @IsDate()
+  subscriptionExpiry:Date;
 
 }

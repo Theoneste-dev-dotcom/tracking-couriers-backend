@@ -23,12 +23,13 @@ export class AuthService {
   }
 
   async login(user: any):Promise<LoginResponseDto>{
+    console.log('the key is ', this.configService.get<string>('JWT_SECRET_KEY'))
     const payload = { email: user.email, sub: user.id, role: user.role };
-    const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
-    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+    const accessToken = this.jwtService.sign(payload, {secret:this.configService.get<string>('JWT_SECRET_KEY'), expiresIn: '15m' });
+    const refreshToken = this.jwtService.sign(payload, {secret:this.configService.get<string>('JWT_SECRET_KEY'), expiresIn: '7d' });
 
     await this.userService.updateRefreshToken(user.id, refreshToken);
-    return new LoginResponseDto("Logged in successfull!! ", accessToken, refreshToken)
+    return new LoginResponseDto("Logged in successfull!! ", accessToken, refreshToken, user.name, user.email, user.role)
   }
 
   async refreshToken(userId: number, token: string) {

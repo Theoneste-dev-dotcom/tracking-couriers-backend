@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, Put } from '@nestjs/common';
 import { UserService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -26,7 +26,7 @@ export class UsersController {
   }
 
   @UseGuards(AuthGuard)
-  @Patch(':id')
+  @Put(':id')
   update(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(id, updateUserDto);
   }
@@ -35,5 +35,16 @@ export class UsersController {
   @Delete(':id')
   remove(@Param('id') id: number) {
     return this.usersService.remove(id);
+  }
+
+
+  @Get(':id/companies')
+  getCompanies(@Param('id') id: number) {
+    return this.usersService.getUserCompanies(Number(id));
+  }
+
+  @Put('disjoin/:userId/:companyId')
+  disJoinCompany(@Param('userid') userid:number, @Param('companyId') companyId:number) {
+    return this.usersService.disJoinCompany(userid, companyId) 
   }
 }

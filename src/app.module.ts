@@ -10,7 +10,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { CronModule } from './cron-jobs/cron.module';
 
-
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -18,7 +17,9 @@ import { CronModule } from './cron-jobs/cron.module';
       envFilePath: '.env',
     }),
     TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
+      imports: [ConfigModule.forRoot({
+        isGlobal:true,
+      })],
       useFactory: async (configService: ConfigService) => ({
         type: 'postgres',
         host: configService.get<string>('DB_HOST'),

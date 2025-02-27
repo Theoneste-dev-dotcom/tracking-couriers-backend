@@ -23,7 +23,7 @@ export class User {
   @Column()
   phone?: string;
 
-  @ManyToMany(() => Company, (company) => company.users)
+  @ManyToMany(() => Company, (company) => company.users, {nullable: true})
   @JoinTable({
     name: 'user_companies', // Name of the join table
     joinColumn: {
@@ -44,5 +44,5 @@ export class User {
   updatedAt: Date;
 
   @IsString()
-  refreshToken:string;
+  refreshToken?:string;
 }

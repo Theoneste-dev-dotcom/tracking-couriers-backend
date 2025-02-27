@@ -32,9 +32,9 @@ export class Company {
   @ManyToMany(() => User, (user)=> user.companies)
   users?:User[]
 
-  @CreateDateColumn({default: Date.now()})
+  @CreateDateColumn()
   createdAt: Date;
 
-  @UpdateDateColumn({default: Date.now()})
+  @UpdateDateColumn()
   updatedAt: Date;
 }
