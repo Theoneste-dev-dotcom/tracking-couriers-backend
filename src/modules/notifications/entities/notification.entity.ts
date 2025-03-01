@@ -1,4 +1,5 @@
 
+import { NotificationType } from 'src/common/enums/notitication-type.enum';
 import { User } from 'src/modules/users/entities/user.entity';
 import { Entity, PrimaryGeneratedColumn, Column, OneToOne, ManyToOne, JoinColumn } from 'typeorm';
 
@@ -12,7 +13,7 @@ export class Notification {
   user: User
 
   @Column()
-  type: string;
+  type: NotificationType;
 
   @Column()
   message: string;

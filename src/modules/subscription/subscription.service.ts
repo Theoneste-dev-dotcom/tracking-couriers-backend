@@ -6,6 +6,8 @@ import { Company } from '../companies/entities/company.entity';
 import { User } from '../users/entities/user.entity';
 import { SubscriptionPlan } from 'src/common/enums/subscription-plan.enum';
 import { Role } from 'src/common/enums/role.enum';
+import { Subscription } from './subscription.entity';
+import { CreateSubscriptionDto } from './dto/create-subscription.dto';
 
 @Injectable()
 export class SubscriptionService {
@@ -16,7 +18,44 @@ export class SubscriptionService {
     private userRepository: Repository<User>,
     @InjectRepository(Shipment)
     private shipmentRepository: Repository<Shipment>,
+
+    @InjectRepository(Subscription)
+    private subscriptionRepository: Repository<Subscription>
   ) {}
+
+  async createSubscription(createSubscriptionDto: CreateSubscriptionDto) {
+    const subscription = this.subscriptionRepository.create(createSubscriptionDto);
+    return this.subscriptionRepository.save(subscription);
+  }
+
+  async getCompanySubscription(companyId: number) {
+    return this.subscriptionRepository.findOne({
+      where: { company: { id: companyId } },
+      order: { expiryDate: 'DESC' },
+    });
+  }
+
+
+
+  async updateSubscription(companyId: number, plan: SubscriptionPlan, durationDays: number) {
+    const subscription = await this.getCompanySubscription(companyId);
+    if (!subscription) throw new NotFoundException('Subscription not found');
+
+    subscription.plan = plan;
+    subscription.startDate = new Date();
+    subscription.expiryDate = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000); // Add days
+
+    return this.subscriptionRepository.save(subscription);
+  }
+
+
+
+  async checkSubscription(companyId: number): Promise<boolean | null> {
+    const subscription = await this.getCompanySubscription(companyId);
+    return subscription && subscription.expiryDate > new Date();
+  }
+
+
 
   async isSubscriptionValid(company: Company): Promise<boolean> {
     if (!company.subscriptionExpiry) {

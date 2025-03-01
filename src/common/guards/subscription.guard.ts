@@ -22,11 +22,13 @@ export class SubscriptionGuard implements CanActivate {
     );
 
     if (!requiredPlans) {
-      return true; // If no subscription plan restriction, allow access
+      return true; 
     }
 
+
+    
     const request = context.switchToHttp().getRequest();
-    const user = request.user; // This should be set by `AuthGuard`
+    const user = request.user; 
 
     if (!user || !user.companyId) {
       throw new ForbiddenException('User is not associated with any company');

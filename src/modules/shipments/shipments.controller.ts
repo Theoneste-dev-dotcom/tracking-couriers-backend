@@ -10,21 +10,24 @@ import { Roles } from 'src/common/decorators/roles.decorator';
 import { Role } from 'src/common/enums/role.enum';
 import { SubscriptionService } from '../subscription/subscription.service';
 import { SubscriptionFilter } from 'src/common/filters/subscription.filter';
+import { SubscriptionPlan } from 'src/common/enums/subscription-plan.enum';
+import { Subscription } from 'src/common/decorators/subscription.decorator';
 
 @Controller('shipments')
-@UseFilters(new SubscriptionFilter(new SubscriptionService()))
 @UseGuards(AuthGuard, SubscriptionGuard)
 export class ShipmentsController {
   constructor(private readonly shipmentsService: ShipmentsService) {}
 
-  @UseGuards(RolesGuard, AuthGuard)
   @Roles(Role.ADMIN, Role.CLIENT, Role.DRIVER, Role.OFFICER)
+  // @Subscription(SubscriptionPlan.BASIC, SubscriptionPlan.PREMIUM)
+  // SubscriptionGuard
+  @UseGuards(AuthGuard)
   @Post()
   async createShipment(@Body() createShipmentDto: CreateShipmentDto) {
     return await this.shipmentsService.create(createShipmentDto);
   }
-
-  @UseGuards(RolesGuard)
+  
+  @UseGuards(AuthGuard,RolesGuard)
   @Get()
   async getAllShipments() {
     return await this.shipmentsService.findAll();
