@@ -7,6 +7,7 @@ import { CreateNotificationDto } from './dto/create-notification.dto';
 import { CompaniesService } from '../companies/companies.service';
 import * as twilio from 'twilio';
 import * as nodemailer from 'nodemailer';
+import { NotificationType } from 'src/common/enums/notitication-type.enum';
 
 @Injectable()
 export class NotificationsService {
@@ -59,15 +60,6 @@ export class NotificationsService {
     });
   }
 
-  // Get company related notifiations for admins of companies and officers of the company
-  async getCompanyRelatedNotifications(companyId: number) {
-    const company = this.companyService.findCompany(companyId);
-
-    if (!company) {
-      throw new Error('Company not found');
-    }
-  }
-
   async sendNotificationToEmail(
     userId: number,
     subject: string,
@@ -98,7 +90,7 @@ export class NotificationsService {
     userId: number,
     message: string,
   ): Promise<void> {
-    const user = await this.usersService.findOneById(userId)
+    const user = await this.usersService.findOneById(userId);
     if (!user || !user.phone) {
       throw new Error('User not found or phone number not provided');
     }
@@ -116,5 +108,87 @@ export class NotificationsService {
       console.error('Error sending SMS notification', error);
       throw new Error('Failed to send SMS notification');
     }
+  }
+
+  // ... existing code ...
+
+  async getCompanyRelatedNotifications(companyId: number) {
+    const company = await this.companyService.findCompany(companyId);
+
+    if (!company) {
+      throw new Error('Company not found');
+    }
+
+    return this.notifcationRepository.find({
+      where: {
+        company: { id: companyId },
+        type: NotificationType.COMPANY,
+      },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async getUserRelatedNotifications(userId: number) {
+    const user = await this.usersService.findOneById(userId);
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    return this.notifcationRepository.find({
+      where: {
+        user: { id: userId },
+        type: NotificationType.USER,
+      },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async getShipmentRelatedNotifications(userId: number, companyId?: number) {
+    const user = await this.usersService.findOneById(userId);
+
+    if (companyId) {
+      const company = this.companyService.findCompany(companyId);
+    }
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // if no company id provided
+    if (!companyId) {
+      return this.notifcationRepository.find({
+        where: {
+          user: { id: userId },
+          type: NotificationType.SHIPMENT,
+        },
+        order: { createdAt: 'DESC' },
+      });
+    } else {
+      return this.notifcationRepository.find({
+        where: {
+          user: { id: userId },
+          type: NotificationType.SHIPMENT,
+        },
+        order: { createdAt: 'DESC' },
+      });
+    }
+    // if company id provided
+  }
+
+  async getSubscriptionRelatedNotifications(companyId: number) {
+    const company = await this.companyService.findCompany(companyId);
+
+    if (!company) {
+      throw new Error('User not found');
+    }
+
+    return this.notifcationRepository.find({
+      where: {
+        company: { id: companyId },
+        type: NotificationType.SUBSCRIPTION,
+      },
+      order: { createdAt: 'DESC' },
+    });
   }
 }
