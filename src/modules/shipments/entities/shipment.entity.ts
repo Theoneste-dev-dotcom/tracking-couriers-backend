@@ -30,6 +30,10 @@ export class Shipment {
   @JoinColumn({ name: 'shipment_update_id' })
   shipmentUpdate: ShipmentUpdate;
 
+  @ManyToOne(()=> User)
+  @JoinColumn({name:"user_id"})
+  user? : User
+
   @Column()
   senderId?: number;
 

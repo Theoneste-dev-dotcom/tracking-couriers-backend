@@ -25,7 +25,7 @@ export class Company {
     enum: SubscriptionPlan,
     default: SubscriptionPlan.FREE_TRIAL, 
   })
-  subscriptionPlan?: SubscriptionPlan;
+  subscriptionPlan: SubscriptionPlan;
 
   @Column({ type: 'timestamp', nullable: true })
   subscriptionExpiry: Date | null;

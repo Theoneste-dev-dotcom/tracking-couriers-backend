@@ -22,9 +22,9 @@ export class ShipmentsController {
   // @Subscription(SubscriptionPlan.BASIC, SubscriptionPlan.PREMIUM)
   // SubscriptionGuard
   @UseGuards(AuthGuard)
-  @Post()
-  async createShipment(@Body() createShipmentDto: CreateShipmentDto) {
-    return await this.shipmentsService.create(createShipmentDto);
+  @Post(":userId/:companyId")
+  async createShipment(@Body() createShipmentDto: CreateShipmentDto, @Param('userId') userId:number, @Param("companId") companyId:number) {
+    return await this.shipmentsService.create(createShipmentDto, userId, companyId);
   }
   
   @UseGuards(AuthGuard,RolesGuard)
