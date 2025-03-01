@@ -31,10 +31,13 @@ export class Company {
   subscriptionExpiry: Date | null;
   
   @ManyToMany(() => User, (user)=> user.companies)
-  users?:User[]
+  users?:User[];
 
   @OneToMany(() => Shipment, (shipment) => shipment.company)
-  shipments: Shipment[];
+  shipments: Shipment[]; 
+
+  @Column({nullable: true})
+  logoUrl?: string;
 
   @CreateDateColumn()
   createdAt: Date;

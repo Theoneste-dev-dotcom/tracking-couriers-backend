@@ -34,4 +34,8 @@ export class ShipmentsService {
   async remove(id: number) {
     return await this.shipmentRepository.delete(id);
   }
+
+  async findShipmentByCompany(companyId:number):Promise<Shipment[]> {
+    return this.shipmentRepository.findBy({company : {id: companyId}})
+  }
 }

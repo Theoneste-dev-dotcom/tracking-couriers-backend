@@ -20,7 +20,7 @@ export class User {
   @Column()
   role: Role;
 
-  @Column()
+  @Column( {nullable: true})
   phone?: string;
 
   @ManyToMany(() => Company, (company) => company.users, {nullable: true})

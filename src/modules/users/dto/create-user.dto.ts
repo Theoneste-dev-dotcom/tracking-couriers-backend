@@ -25,5 +25,7 @@ export class CreateUserDto {
   @IsArray()
   companies?:number[]
 
+  @IsString()
+  refreshToken?:string;
 
 }

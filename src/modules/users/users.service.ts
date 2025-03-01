@@ -14,6 +14,7 @@ import { SignupResponseDto } from './dto/signup-response.dto';
 import { UserResponseDto } from './dto/user-response.dto';
 import { CompaniesService } from '../companies/companies.service';
 import { Company } from '../companies/entities/company.entity';
+import { Role } from 'src/common/enums/role.enum';
 
 @Injectable()
 export class UserService {
@@ -85,6 +86,18 @@ export class UserService {
       throw new NotFoundException('User not found');
     }
     return user;
+  }
+
+
+  async findDriversByCompany(companyId:number):Promise<User[]> {
+    const users = await this.usersRepository
+    .createQueryBuilder('user')
+    .innerJoin('user.companies', 'company')
+    .where('company.id = :companyId', {companyId})
+    .andWhere('user.role = :role', {role: Role.DRIVER})
+    .getMany();
+
+  return users;
   }
 
   async updateRefreshToken(

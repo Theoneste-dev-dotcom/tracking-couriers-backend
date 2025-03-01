@@ -22,8 +22,10 @@ export class UserResponseDto {
 
   @IsString()
   updatedAt?: Date;
+  
+  refreshToken?:string
 
-  constructor(id: number, name: string, email: string, role: Role, phone?: string, createdAt?: Date, updatedAt?: Date) {
+  constructor(id: number, name: string, email: string, role: Role, phone?: string, createdAt?: Date, updatedAt?: Date, refreshToken?:string) {
     this.id = id;
     this.name = name;
     this.email = email;
@@ -31,5 +33,6 @@ export class UserResponseDto {
     this.phone = phone;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
+    this.refreshToken = refreshToken
   }
 }

@@ -19,4 +19,9 @@ export class Notification {
 
   @Column({ default: false })
   seen: boolean;
+
+  @Column({nullable: true})
+  relatedShipmentId?:number;
 }
+
+

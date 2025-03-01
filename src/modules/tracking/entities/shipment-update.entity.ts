@@ -4,6 +4,10 @@ import { Company } from '../../companies/entities/company.entity';
 import { Shipment } from 'src/modules/shipments/entities/shipment.entity';
 import { User } from 'src/modules/users/entities/user.entity';
 
+
+
+
+
 @Entity()
 export class ShipmentUpdate {
 
@@ -31,5 +35,10 @@ export class ShipmentUpdate {
 
   @Column()
   status: string;
+
+  @Column({nullable: true})
+  scanTime?:Date;
+  
+ 
 }
 

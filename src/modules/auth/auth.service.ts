@@ -4,6 +4,7 @@ import * as bcrypt from 'bcryptjs';
 import { UserService } from '../users/users.service';
 import { ConfigService } from '@nestjs/config';
 import { LoginResponseDto } from '../users/dto/login-response.dto';
+import { User } from '../users/entities/user.entity';
 
 
 @Injectable()
@@ -32,18 +33,43 @@ export class AuthService {
     return new LoginResponseDto("Logged in successfull!! ", accessToken, refreshToken, user.name, user.email, user.role)
   }
 
-  async refreshToken(userId: number, token: string) {
-    const user = await this.userService.findUser(userId)
-    if (!user || user.refreshToken !== token) {
-      throw new UnauthorizedException('Invalid refresh token');
+  async refreshToken(userId: number, refreshToken: string) {
+    try{
+    const payload = await this.jwtService.verifyAsync(refreshToken, {
+      secret: this.configService.get<string>('JWT_SECRET_KEY')
+    });
+
+    const user = await this.userService.findOneById(payload.sub)
+    if(user.refreshToken !== refreshToken) {
+      throw new UnauthorizedException('Invalid refresh token')
     }
+
+    const access_token = await this.jwtService.signAsync({
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    });
     
-    return this.login(user);
+    return { access_token };
+  } catch (error) {
+    throw new UnauthorizedException('Invalid refresh token');
+  }
+   
   }
 
   validateToken(token: string) {
     return this.jwtService.verify(token, {
         secret : process.env.JWT_SECRET_KEY
     });
+}
+
+async generateRefreshToken(user:User):Promise<string> {
+  const payload = {sub: user.id, email: user.email} 
+  const refreshToken = await this.jwtService.signAsync(payload,  {
+    secret: this.configService.get<string>('JWT_SECRET_KEY'),
+    expiresIn: '7d'
+  })
+  await this.userService.update(user.id, {refreshToken: refreshToken})
+  return refreshToken
 }
 }
