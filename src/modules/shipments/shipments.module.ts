@@ -12,10 +12,10 @@ import { NotificationsModule } from '../notifications/notifications.module';
 @Module({
   imports:[
     TypeOrmModule.forFeature([Shipment]),
-    AuthModule,
     CompaniesModule,
-    UsersModule,
     NotificationsModule,
+    forwardRef(()=> UsersModule),
+    forwardRef(()=> AuthModule)
   ],
   controllers: [ShipmentsController],
   providers: [ShipmentsService],

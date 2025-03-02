@@ -47,7 +47,8 @@ export class NotificationsController {
     return this.notificationsService.getUserRelatedNotifications(userId);
   }
 
-  @Get('shipment/:userId/:companyId?')
+  @Get('shipment/:userId')
+  @Get('shipment/:userId/:companyId')
   @ApiOperation({ summary: 'Get shipment related notifications' })
   async getShipmentNotifications(
     @Param('userId') userId: number,

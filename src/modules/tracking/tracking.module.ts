@@ -7,15 +7,17 @@ import { ShipmentsModule } from '../shipments/shipments.module';
 import { AuthModule } from '../auth/auth.module';
 import { CompaniesModule } from '../companies/companies.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { UsersModule } from '../users/users.module';
 
 @Module({
   imports:[
     TypeOrmModule.forFeature([ShipmentUpdate]),
     forwardRef(()=> ShipmentsModule),
-    AuthModule,
     CompaniesModule,
     NotificationsModule,
-    ShipmentsModule
+    ShipmentsModule,
+    forwardRef(()=>UsersModule),
+    forwardRef(()=> AuthModule)
   ],
   controllers: [TrackingController],
   providers: [TrackingService],
