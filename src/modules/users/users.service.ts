@@ -46,12 +46,12 @@ export class UserService {
       if (createUserDto.role === Role.OFFICER && currentUser) {
         return await this.createOfficer(createUserDto, currentUser, companyId);
       }
-    } else if (!currentUser && createUserDto.role == Role.DRIVER) {
+    } else if (!currentUser && createUserDto.role == Role.DRIVER || createUserDto.role == Role.OFFICER) {
       console.log("oops !! we don't have any user");
       return {
         success: false,
         message:
-          'Oops! You need to be logged in to add a new driver. Someone with manager or admin access needs to be logged in first.',
+          'Oops! You need to be logged in to add a new driver or Officer. Someone with manager or admin access needs to be logged in first.',
         code: '401',
       };
     } else if (createUserDto.role != Role.DRIVER) {
@@ -77,13 +77,13 @@ export class UserService {
     }
 
     // Check if the company ID is provided and if the driver limit is exceeded
-    // if (companyId) {
-    //   const canAddDriver =
-    //     await this.subscriptionService.checkDriverLimit(companyId);
-    //   if (!canAddDriver) {
-    //     throw new ForbiddenException('Driver limit exceeded for this company.');
-    //   }
-    // }
+    if (companyId) {
+      const canAddOfficer =
+        await this.subscriptionService.checkOfficerLimit(companyId)
+      if (!canAddOfficer) {
+        throw new ForbiddenException('Officer limit exceeded for this company.');
+      }
+    }
 
     // Check if the user already exists
     const existingUser = await this.usersRepository.findOne({
