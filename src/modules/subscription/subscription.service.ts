@@ -132,4 +132,29 @@ export class SubscriptionService {
         return false;
     }
   }
+
+  async checkOfficerLimit(companyId: number): Promise<boolean> {
+    const company = await this.companyRepository.findOneBy({ id: companyId });
+    if (!company) {
+        return false; // If there's no company, we can't check the limit
+    }
+
+    const officers = await this.userRepository
+        .createQueryBuilder('user')
+        .innerJoin('user.companies', 'company')
+        .where('company.id = :companyId', { companyId })
+        .andWhere('user.role = :role', { role: Role.OFFICER }) // Changed to OFFICER
+        .getCount();
+
+    switch (company.subscriptionPlan) {
+        case SubscriptionPlan.FREE_TRIAL:
+            return officers < 2; // Only 2 officers allowed for FREE_TRIAL
+        case SubscriptionPlan.BASIC:
+            return officers < 5; // Only 5 officers allowed for BASIC
+        case SubscriptionPlan.PREMIUM:
+            return true; // Unlimited officers for PREMIUM
+        default:
+            return false; // If the subscription plan is unknown, no officers allowed
+    }
+}
 }
