@@ -6,13 +6,16 @@ import { ShipmentUpdate } from './entities/shipment-update.entity';
 import { ShipmentsModule } from '../shipments/shipments.module';
 import { AuthModule } from '../auth/auth.module';
 import { CompaniesModule } from '../companies/companies.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports:[
     TypeOrmModule.forFeature([ShipmentUpdate]),
     forwardRef(()=> ShipmentsModule),
     AuthModule,
-    CompaniesModule
+    CompaniesModule,
+    NotificationsModule,
+    ShipmentsModule
   ],
   controllers: [TrackingController],
   providers: [TrackingService],

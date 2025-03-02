@@ -6,6 +6,9 @@ export class CreateNotificationDto {
   @IsNumber()
   userId: number;
 
+  @IsNumber()
+  companyId:number;
+
   @IsString()
   type: NotificationType;
 
@@ -19,4 +22,13 @@ export class CreateNotificationDto {
   @IsNumber()
   @IsOptional()
   relatedShipmentId?: number;
+
+  constructor(userId:number, companyId:number, type:NotificationType, message:string, related_id:number ) {
+    this.userId = userId;
+    this.companyId = companyId;
+    this.type = type;
+    this.message = message;
+    this.seen = false;
+    this.relatedShipmentId = related_id;
+  }
 }

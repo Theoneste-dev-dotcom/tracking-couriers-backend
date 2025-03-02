@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Param, Put, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Put,
+  UseGuards,
+} from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
@@ -15,10 +23,11 @@ export class NotificationsController {
   // simple sending notification via web sockets
   @Post()
   @ApiOperation({ summary: 'Create a new notification' })
-  async createNotification(@Body() createNotificationDto: CreateNotificationDto) {
+  async createNotification(
+    @Body() createNotificationDto: CreateNotificationDto,
+  ) {
     return this.notificationsService.sendNotification(createNotificationDto);
   }
-
 
   @Get('user/:userId')
   @ApiOperation({ summary: 'Get all notifications for a user' })
@@ -40,14 +49,22 @@ export class NotificationsController {
 
   @Get('shipment/:userId/:companyId?')
   @ApiOperation({ summary: 'Get shipment related notifications' })
-  async getShipmentNotifications(@Param('userId') userId: number, @Param('companyId') companyId?: number) {
-    return this.notificationsService.getShipmentRelatedNotifications(userId, companyId);
+  async getShipmentNotifications(
+    @Param('userId') userId: number,
+    @Param('companyId') companyId?: number,
+  ) {
+    return this.notificationsService.getShipmentRelatedNotifications(
+      userId,
+      companyId,
+    );
   }
 
   @Get('subscription/:companyId')
   @ApiOperation({ summary: 'Get subscription related notifications' })
   async getSubscriptionNotifications(@Param('companyId') companyId: number) {
-    return this.notificationsService.getSubscriptionRelatedNotifications(companyId);
+    return this.notificationsService.getSubscriptionRelatedNotifications(
+      companyId,
+    );
   }
 
   @Put(':id/mark-seen')
@@ -56,30 +73,22 @@ export class NotificationsController {
     return this.notificationsService.markNotificationAsSeen(id);
   }
 
-
   @UseGuards(AuthGuard)
   @Subscription(SubscriptionPlan.BASIC, SubscriptionPlan.PREMIUM)
   @Post('email')
   @ApiOperation({ summary: 'Send email notification' })
-  async sendEmailNotification(
-    @Body() payload: { userId: number; subject: string; message: string },
-  ) {
-    return this.notificationsService.sendNotificationToEmail(
-      payload.userId,
-      payload.subject,
-      payload.message,
-    );
+  async sendEmailNotification(@Body() notification) {
+    return this.notificationsService.sendNotificationToEmail(notification);
   }
 
   @Subscription(SubscriptionPlan.PREMIUM)
   @Post('sms')
   @ApiOperation({ summary: 'Send SMS notification' })
   async sendSMSNotification(
-    @Body() payload: { userId: number; message: string },
+    @Body() notification,
   ) {
     return this.notificationsService.sendNotificationToPhone(
-      payload.userId,
-      payload.message,
+      notification
     );
   }
 }

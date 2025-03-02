@@ -13,6 +13,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { SubscriptionPlan } from 'src/common/enums/subscription-plan.enum';
 import { NotificationType } from 'src/common/enums/notitication-type.enum';
 import moment from 'moment';
+import { CreateNotificationDto } from '../notifications/dto/create-notification.dto';
 
 @Injectable()
 export class ShipmentsService {
@@ -59,6 +60,7 @@ export class ShipmentsService {
     }
 
     if (user.role == Role.CLIENT) {
+      const message = `User ${user.name} Requested service to driver his ${shipment.name}`
       // create the shipment and send notification to the related company, if their subscription has ended give hime alert that , you are requesting the service to the expired premium bank
       if (company.subscriptionPlan === SubscriptionPlan.EXPIRED) {
         throw new Error(
@@ -66,26 +68,28 @@ export class ShipmentsService {
         );
       }
 
+      const notification:CreateNotificationDto = new CreateNotificationDto(user.id, company.id, NotificationType.SHIPMENT, message, shipment.id)
+
       switch (company.subscriptionPlan) {
         case SubscriptionPlan.PREMIUM:
-          await this.sendNotifications(createShipmentDto, user, company, [
+          await this.sendNotifications(shipment, user, company, [
             'EMAIL',
             'SMS',
             'PUSH',
-          ]);
+          ], message);
           break;
 
         case SubscriptionPlan.BASIC:
-          await this.sendNotifications(createShipmentDto, user, company, [
+          await this.sendNotifications(shipment, user, company, [
             'EMAIL',
             'PUSH',
-          ]);
+          ], message);
           break;
 
         case SubscriptionPlan.FREE_TRIAL:
-          await this.sendNotifications(createShipmentDto, user, company, [
+          await this.sendNotifications(shipment, user, company, [
             'PUSH',
-          ]);
+          ], message);
           break;
       }
     } else if (
@@ -93,6 +97,8 @@ export class ShipmentsService {
       user.role == Role.OFFICER ||
       user.role == Role.DRIVER
     ) {
+      const message = `A new shipment has been created by ${user.name} in ${company.name}.`;
+    
       switch (company.subscriptionPlan) {
         case SubscriptionPlan.EXPIRED:
           throw new Error(
@@ -100,24 +106,24 @@ export class ShipmentsService {
           );
 
         case SubscriptionPlan.PREMIUM:
-          await this.sendNotifications(createShipmentDto, user, company, [
+          await this.sendNotifications(shipment, user, company, [
             'EMAIL',
             'SMS',
             'PUSH',
-          ]);
+          ], message);
           break;
 
         case SubscriptionPlan.BASIC:
-          await this.sendNotifications(createShipmentDto, user, company, [
+          await this.sendNotifications(shipment, user, company, [
             'EMAIL',
             'PUSH',
-          ]);
+          ], message);
           break;
 
         case SubscriptionPlan.FREE_TRIAL:
-          await this.sendNotifications(createShipmentDto, user, company, [
+          await this.sendNotifications(shipment, user, company, [
             'PUSH',
-          ]);
+          ], message);
           break;
       }
     } else {
@@ -133,8 +139,12 @@ export class ShipmentsService {
     return await this.shipmentRepository.find();
   }
 
-  async findOne(id: number) {
-    return await this.shipmentRepository.findOne({ where: { id } });
+  async findOne(id: number):Promise<Shipment> {
+    const shipment = await this.shipmentRepository.findOne({ where: { id } });
+    if(!shipment) {
+      throw new Error("Failed to get the related shipment")
+    }
+    return shipment
   }
 
   async update(id: number, updateShipmentDto: UpdateShipmentDto) {
@@ -154,31 +164,44 @@ export class ShipmentsService {
     return this.shipmentRepository.findBy({ user: { id: clientId } });
   }
 
+  async getShipmentReceiverOrSender(userId:number){
+    const receiver = this.userService.findUser(userId)
+    if(!receiver){
+      return "Your haven't specified the receiver of the shipment |  or the receiver isn't registered within our  system"
+    }
+    return receiver;
+   
+  }
+
   private async sendNotifications(
-    shipmentDto: CreateShipmentDto,
+    shipmentDto: Shipment,
     user: User,
     company: Company,
     notificationTypes: string[],
+    message:string
   ) {
-    const message = `A new shipment has been created by ${user.name} in ${company.name}.`;
+ 
+    
+      const notification: CreateNotificationDto = new CreateNotificationDto(
+          user.id,
+          company.id,
+          NotificationType.SHIPMENT,
+          message,
+          shipmentDto.id,
+        ); 
 
     // Send notifications based on the plan
     if (notificationTypes.includes('EMAIL')) {
       await this.notificationsService.sendNotificationToEmail(
-        user.id,
-        'Shipment Created',
-        message,
+       notification
       );
     }
     if (notificationTypes.includes('SMS')) {
-      await this.notificationsService.sendNotificationToPhone(user.id, message);
+      await this.notificationsService.sendNotificationToPhone(notification);
     }
+    // send push notification
     if (notificationTypes.includes('PUSH')) {
-      await this.notificationsService.sendNotification({
-        userId: user.id,
-        message: message,
-        type: NotificationType.SHIPMENT,
-      });
+      await this.notificationsService.sendNotification(notification);
     }
   }
 

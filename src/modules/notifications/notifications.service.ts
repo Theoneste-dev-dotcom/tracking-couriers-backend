@@ -61,11 +61,9 @@ export class NotificationsService {
   }
 
   async sendNotificationToEmail(
-    userId: number,
-    subject: string,
-    message: string,
+   notification:CreateNotificationDto
   ): Promise<void> {
-    const user = await this.usersService.findOneById(userId);
+    const user = await this.usersService.findOneById(notification.userId);
     if (!user || !user.email) {
       throw new Error('User not found or email not provided');
     }
@@ -74,9 +72,9 @@ export class NotificationsService {
       await this.emailTransporter.sendMail({
         from: process.env.EMAIL_USER,
         to: user.email,
-        subject: subject,
-        text: message,
-        html: `<p>${message}</p>`,
+        subject: "Notification header",
+        text: notification.message,
+        html: `<p>${notification.message}</p>`,
       });
       // implement send push notification
       // await this.sendNotification();
@@ -87,17 +85,16 @@ export class NotificationsService {
   }
 
   async sendNotificationToPhone(
-    userId: number,
-    message: string,
+ notification:CreateNotificationDto
   ): Promise<void> {
-    const user = await this.usersService.findOneById(userId);
+    const user = await this.usersService.findOneById(notification.userId);
     if (!user || !user.phone) {
       throw new Error('User not found or phone number not provided');
     }
 
     try {
       await this.twilioClient.messages.create({
-        body: message,
+        body: notification.message,
         from: process.env.TWILIO_PHONE_NUMBER,
         to: user.phone,
       });

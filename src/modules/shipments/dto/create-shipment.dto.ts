@@ -1,6 +1,10 @@
 import { IsNotEmpty, IsNumber, IsString, IsObject } from 'class-validator';
 
 export class CreateShipmentDto {
+  @IsString()
+  @IsNotEmpty()
+  shipment_name:string;
+  
   @IsNotEmpty()
   @IsString()
   trackingNumber: string;

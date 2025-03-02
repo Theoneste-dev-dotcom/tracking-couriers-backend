@@ -1,3 +1,4 @@
+import { IsNotEmpty, IsString } from 'class-validator';
 import { Company } from 'src/modules/companies/entities/company.entity';
 import { ShipmentUpdate } from 'src/modules/tracking/entities/shipment-update.entity';
 import { User } from 'src/modules/users/entities/user.entity';
@@ -23,8 +24,13 @@ interface UserDetails {
 }
 @Entity()
 export class Shipment {
+
   @PrimaryGeneratedColumn()
   id: number;
+
+  @IsString()
+  @IsNotEmpty()
+  name:string;
 
   @OneToOne(() => ShipmentUpdate, { nullable: true })
   @JoinColumn({ name: 'shipment_update_id' })
