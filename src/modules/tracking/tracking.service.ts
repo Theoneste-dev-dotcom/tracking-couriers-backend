@@ -25,6 +25,9 @@ export class TrackingService {
     private shipmentService: ShipmentsService,
   ) {}
 
+
+  // on frontend we will add a button for stargin track for creating a tracking entity, that we will notify him whenever the location is updated 
+
   async create(
     createShipmentUpdateDto: CreateTrackingDto,
   ): Promise<ShipmentUpdate> {
@@ -35,6 +38,7 @@ export class TrackingService {
   }
 
   // encourage the receiver and sender to be registered for receiving the updates about the shipment
+  // this will be made whenever the the drivers scans for the shipment
   async updateLocation(createTrackingDto: UpdateTrackingDto) {
     // check the drivers subscription and update the related users, and companies
 

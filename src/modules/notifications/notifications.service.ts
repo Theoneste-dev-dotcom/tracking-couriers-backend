@@ -8,6 +8,7 @@ import { CompaniesService } from '../companies/companies.service';
 import * as twilio from 'twilio';
 import * as nodemailer from 'nodemailer';
 import { NotificationType } from 'src/common/enums/notitication-type.enum';
+import { NotificationGateway } from './gateways/notifications.gateway';
 
 @Injectable()
 export class NotificationsService {
@@ -19,6 +20,7 @@ export class NotificationsService {
     private readonly notifcationRepository: Repository<Notification>,
     private readonly companyService: CompaniesService,
     private readonly usersService: UserService,
+    private readonly notificationGateway:NotificationGateway,
   ) {}
   async sendNotification(
     notificationDto: CreateNotificationDto,
@@ -30,7 +32,11 @@ export class NotificationsService {
     }
 
     const notificaion = this.notifcationRepository.create(notificationDto);
-    return this.notifcationRepository.save(notificaion);
+    const savedNotification =  this.notifcationRepository.save(notificaion);
+
+    // emit notification to WEbsocket server
+    this.notificationGateway.sendNotificationToUser((await user).id, savedNotification)
+    return savedNotification
   }
 
   async markNotificationAsSeen(notificationId: number): Promise<Notification> {
