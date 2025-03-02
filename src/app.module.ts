@@ -30,7 +30,7 @@ import { SubscriptionModule } from './modules/subscription/subscription.module';
         database: configService.get<string>('DB_NAME'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'], 
         synchronize: true, 
-        logging: configService.get<boolean>('LOGGING', true), 
+        logging: configService.get<boolean>('LOGGING', false), 
       }),
       inject: [ConfigService],
     }),

@@ -15,25 +15,29 @@ import { UserService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthGuard } from '../auth/auth.guard';
+import {
+  AdminUpdateUserDto,
+  DriverUpdateUserDto,
+} from './dto/update-user1.dto';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UserService) {}
-  // just adding users for normal users / admin/ clients
-  // addin uers for officers, drivers
-  // adding officer can only be done by admin,
-  // addin officer can be done by only admin and driver
 
   @Post()
   async create(
     @Body() createUserDto: CreateUserDto,
     @Request() req,
     @Query('companyId') companyId?: number,
-    @Query('currentId') currentId?:number
+    @Query('currentId') currentId?: number,
   ) {
-    if(currentId) {
-      const currentUser = await this.usersService.findOneById(currentId)
-      return this.usersService.createUser(createUserDto, currentUser, companyId)
+    if (currentId) {
+      const currentUser = await this.usersService.findOneById(currentId);
+      return this.usersService.createUser(
+        createUserDto,
+        currentUser,
+        companyId,
+      );
     }
     return this.usersService.createUser(createUserDto, req.user, companyId);
   }
@@ -52,8 +56,17 @@ export class UsersController {
 
   @UseGuards(AuthGuard)
   @Put(':id')
-  update(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(id, updateUserDto);
+  async update(
+    @Param('id') id: number,
+    @Body() updateUserDto: AdminUpdateUserDto | DriverUpdateUserDto,
+    @Request() req,
+    @Query('currentId') currentId?:number
+  ) {
+    if(currentId) {
+      const currentUser = await this.usersService.findUser(currentId);
+      return this.usersService.update(id, updateUserDto, currentUser);
+    }
+    return this.usersService.update(id, updateUserDto, req.user);
   }
 
   @UseGuards(AuthGuard)

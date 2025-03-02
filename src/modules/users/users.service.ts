@@ -19,6 +19,11 @@ import { Company } from '../companies/entities/company.entity';
 import { Role } from 'src/common/enums/role.enum';
 import { subscriptionLogsToBeFn } from 'rxjs/internal/testing/TestScheduler';
 import { SubscriptionService } from '../subscription/subscription.service';
+import {
+  AdminUpdateUserDto,
+  DriverUpdateUserDto,
+} from './dto/update-user1.dto';
+import { request } from 'http';
 
 @Injectable()
 export class UserService {
@@ -46,7 +51,10 @@ export class UserService {
       if (createUserDto.role === Role.OFFICER && currentUser) {
         return await this.createOfficer(createUserDto, currentUser, companyId);
       }
-    } else if (!currentUser && createUserDto.role == Role.DRIVER || createUserDto.role == Role.OFFICER) {
+    } else if (
+      (!currentUser && createUserDto.role == Role.DRIVER) ||
+      createUserDto.role == Role.OFFICER
+    ) {
       console.log("oops !! we don't have any user");
       return {
         success: false,
@@ -71,17 +79,17 @@ export class UserService {
 
     // Check if the current user has permission to add a driver
     if (currentRole !== Role.ADMIN) {
-      throw new UnauthorizedException(
-        'Only admins  can add officers',
-      );
+      throw new UnauthorizedException('Only admins  can add officers');
     }
 
     // Check if the company ID is provided and if the driver limit is exceeded
     if (companyId) {
       const canAddOfficer =
-        await this.subscriptionService.checkOfficerLimit(companyId)
+        await this.subscriptionService.checkOfficerLimit(companyId);
       if (!canAddOfficer) {
-        throw new ForbiddenException('Officer limit exceeded for this company.');
+        throw new ForbiddenException(
+          'Officer limit exceeded for this company.',
+        );
       }
     }
 
@@ -268,54 +276,54 @@ export class UserService {
     }
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto) {
-    const user = await this.usersRepository.findOne({
-      where: { id },
-      relations: ['companies'],
-    });
+  // async update(id: number, updateUserDto: UpdateUserDto) {
+  //   const user = await this.usersRepository.findOne({
+  //     where: { id },
+  //     relations: ['companies'],
+  //   });
 
-    if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
-    }
+  //   if (!user) {
+  //     throw new NotFoundException(`User with ID ${id} not found`);
+  //   }
 
-    try {
-      if (updateUserDto.companies) {
-        if (updateUserDto.companies.length === 0) {
-          user.companies = [];
-        } else {
-          const existingCompany_ids = new Set(user.companies.map((c) => c.id));
+  //   try {
+  //     if (updateUserDto.companies) {
+  //       if (updateUserDto.companies.length === 0) {
+  //         user.companies = [];
+  //       } else {
+  //         const existingCompany_ids = new Set(user.companies.map((c) => c.id));
 
-          const companies = await this.company_repo.findBy({
-            id: In(updateUserDto.companies),
-          });
+  //         const companies = await this.company_repo.findBy({
+  //           id: In(updateUserDto.companies),
+  //         });
 
-          const unique_companies = [...user.companies];
+  //         const unique_companies = [...user.companies];
 
-          companies.forEach((company) => {
-            if (!existingCompany_ids.has(company.id)) {
-              unique_companies.push(company);
-            }
-          });
+  //         companies.forEach((company) => {
+  //           if (!existingCompany_ids.has(company.id)) {
+  //             unique_companies.push(company);
+  //           }
+  //         });
 
-          if (companies.length !== updateUserDto.companies.length) {
-            throw new NotFoundException('One or more companies not found');
-          }
+  //         if (companies.length !== updateUserDto.companies.length) {
+  //           throw new NotFoundException('One or more companies not found');
+  //         }
 
-          user.companies = unique_companies;
-        }
-      }
+  //         user.companies = unique_companies;
+  //       }
+  //     }
 
-      const { companies, ...otherUpdates } = updateUserDto;
-      Object.assign(user, otherUpdates);
+  //     const { companies, ...otherUpdates } = updateUserDto;
+  //     Object.assign(user, otherUpdates);
 
-      await this.usersRepository.save(user);
+  //     await this.usersRepository.save(user);
 
-      return { message: `User with id ${id} updated successfully` };
-    } catch (error) {
-      console.error('Error updating user:', error);
-      throw new InternalServerErrorException('Failed to update user');
-    }
-  }
+  //     return { message: `User with id ${id} updated successfully` };
+  //   } catch (error) {
+  //     console.error('Error updating user:', error);
+  //     throw new InternalServerErrorException('Failed to update user');
+  //   }
+  // }
 
   async remove(id: number): Promise<void> {
     const user = await this.findUser(id);
@@ -381,6 +389,153 @@ export class UserService {
     }
 
     return user.companies;
+  }
+
+  async update(
+    id: number,
+    updateUserDto: AdminUpdateUserDto | DriverUpdateUserDto,
+    requestingUser: any,
+  ) {
+
+
+    console.log(requestingUser)
+    const userToUpdate = await this.usersRepository.findOneBy({ id });
+    if (!userToUpdate) {
+      throw new NotFoundException('User not found');
+    }
+
+    if(!requestingUser){
+      throw new Error("YOU have to first login in order to update driver of officer")
+    }
+    if (userToUpdate.role === Role.DRIVER) {
+      if(!requestingUser){
+        throw new Error("YOU have to first login in order to update driver of officer")
+      }
+      // Driver update logic
+      await this.updateDriver(id, updateUserDto, requestingUser, userToUpdate);
+    } else if (userToUpdate.role === Role.OFFICER) {
+      if(!requestingUser){
+        throw new Error("YOU have to first login in order to update driver of officer")
+      }
+      // Officer update logic
+      await this.updateOfficer(id, updateUserDto, requestingUser, userToUpdate);
+    } else {
+      // Normal user/client update logic
+      await this.updateNormalUser(id, updateUserDto, userToUpdate);
+    }
+
+    return {
+      success: true,
+      message: 'User updated successfully',
+      data: userToUpdate,
+    };
+  }
+
+  private async updateDriver(
+    id: number,
+    updateUserDto: AdminUpdateUserDto | DriverUpdateUserDto,
+    requestingUser: any,
+    userToUpdate: any,
+  ) {
+    if (
+      requestingUser.role === Role.ADMIN ||
+      requestingUser.role === Role.OFFICER
+    ) {
+      // check the same company if match
+
+      if (!this.checkSameCompany(requestingUser, userToUpdate)) {
+        throw new UnauthorizedException(
+          'You can only update drivers in your own company',
+        );
+      }
+      // Admin/Officer update
+      const adminUpdateDto = updateUserDto as AdminUpdateUserDto; // Type cast
+      if (adminUpdateDto.role) {
+        userToUpdate.role = adminUpdateDto.role;
+      }
+      if (adminUpdateDto.companies) {
+        // Handle updating companies array
+        userToUpdate.companies = await Promise.all(
+          adminUpdateDto.companies.map(async (companyId) => {
+            return await this.company_repo.findOneBy({ id: companyId });
+          }),
+        );
+      }
+      // Update basic info
+      userToUpdate.name = adminUpdateDto.name || userToUpdate.name;
+      userToUpdate.email = adminUpdateDto.email || userToUpdate.email;
+      userToUpdate.phone = adminUpdateDto.phone || userToUpdate.phone;
+    } else if (
+      requestingUser.role === Role.DRIVER &&
+      requestingUser.id === id
+    ) {
+      // Driver self-update
+      const driverUpdateDto = updateUserDto as DriverUpdateUserDto; // Type cast
+      // Update basic info
+      userToUpdate.name = driverUpdateDto.name || userToUpdate.name;
+      userToUpdate.email = driverUpdateDto.email || userToUpdate.email;
+      userToUpdate.phone = driverUpdateDto.phone || userToUpdate.phone;
+    } else {
+      throw new UnauthorizedException('Unauthorized update');
+    }
+    await this.usersRepository.save(userToUpdate);
+  }
+
+  private async updateOfficer(
+    id: number,
+    updateUserDto: AdminUpdateUserDto | DriverUpdateUserDto,
+    requestingUser: any,
+    userToUpdate: any,
+  ) {
+    if (requestingUser.role === Role.ADMIN) {
+      // Admin update
+      const adminUpdateDto = updateUserDto as AdminUpdateUserDto; // Type cast
+      if (adminUpdateDto.role) {
+        userToUpdate.role = adminUpdateDto.role;
+      }
+      if (adminUpdateDto.companies) {
+        // Handle updating companies array
+        userToUpdate.companies = await Promise.all(
+          adminUpdateDto.companies.map(async (companyId) => {
+            return await this.company_repo.findOneBy({ id: companyId });
+          }),
+        );
+      }
+      // Update basic info
+      userToUpdate.name = adminUpdateDto.name || userToUpdate.name;
+      userToUpdate.email = adminUpdateDto.email || userToUpdate.email;
+      userToUpdate.phone = adminUpdateDto.phone || userToUpdate.phone;
+    } else {
+      throw new UnauthorizedException('Unauthorized update');
+    }
+    await this.usersRepository.save(userToUpdate);
+  }
+
+  private async updateNormalUser(
+    id: number,
+    updateUserDto: AdminUpdateUserDto | DriverUpdateUserDto,
+    userToUpdate: any,
+  ) {
+    const normalUserUpdateDto = updateUserDto as AdminUpdateUserDto;
+    userToUpdate.name = normalUserUpdateDto.name || userToUpdate.name;
+    userToUpdate.email = normalUserUpdateDto.email || userToUpdate.email;
+    userToUpdate.phone = normalUserUpdateDto.phone || userToUpdate.phone;
+    await this.usersRepository.save(userToUpdate);
+  }
+
+  private checkSameCompany(user1: any, user2: any): boolean {
+    // Check if user1 and user2 share a company
+    if (!user1.companies || !user2.companies) {
+      return false;
+    }
+    for (const company1 of user1.companies) {
+      for (const company2 of user2.companies) {
+        if (company1.id === company2.id) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   async curentRole(currentUser: any): Promise<Role> {
