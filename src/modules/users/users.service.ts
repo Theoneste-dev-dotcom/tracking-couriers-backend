@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
   InternalServerErrorException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
@@ -15,6 +16,8 @@ import { UserResponseDto } from './dto/user-response.dto';
 import { CompaniesService } from '../companies/companies.service';
 import { Company } from '../companies/entities/company.entity';
 import { Role } from 'src/common/enums/role.enum';
+import { subscriptionLogsToBeFn } from 'rxjs/internal/testing/TestScheduler';
+import { SubscriptionService } from '../subscription/subscription.service';
 
 @Injectable()
 export class UserService {
@@ -23,10 +26,20 @@ export class UserService {
     private usersRepository: Repository<User>,
 
     @InjectRepository(Company)
-    private company_repo: Repository<Company>
+    private company_repo: Repository<Company>,
+
+    private subscriptionService: SubscriptionService
     ) {}
 
-  async createUser(createUserDto: CreateUserDto): Promise<SignupResponseDto> {
+    // POST /users?companyId=123
+  async createUser(createUserDto: CreateUserDto, companyId?:number): Promise<SignupResponseDto> {
+      if(createUserDto.role === Role.DRIVER && companyId) {
+        const canAddDriver = await this.subscriptionService.checkDriverLimit(companyId);
+        if(!canAddDriver) {
+          throw new ForbiddenException('Driver limit exceeded for this company.');
+        }
+      }
+
     const existingUser = await this.usersRepository.findOne({
       where: { email: createUserDto.email },
     });

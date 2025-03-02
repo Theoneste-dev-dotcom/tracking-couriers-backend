@@ -9,6 +9,7 @@ import { TypeOrmModule, TypeOrmOptionsFactory } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { CronModule } from './cron-jobs/cron.module';
+import { SubscriptionModule } from './modules/subscription/subscription.module';
 
 @Module({
   imports: [
@@ -39,7 +40,8 @@ import { CronModule } from './cron-jobs/cron.module';
     ShipmentsModule,
     TrackingModule,
     NotificationsModule,
-    CronModule
+    CronModule,
+    SubscriptionModule
   ],
 
   controllers:[AppController],
