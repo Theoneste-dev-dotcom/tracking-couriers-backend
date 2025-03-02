@@ -15,7 +15,7 @@ export class CompaniesController {
 
 
   @Post()
-  @UseGuards(RolesGuard)
+  @UseGuards(AuthGuard,RolesGuard)
   @Roles(Role.ADMIN)
   create(@Body() createCompanyDto: CreateCompanyDto) {
     return this.companiesService.create(createCompanyDto);
