@@ -198,6 +198,23 @@ export class ShipmentsService {
 
     return shipmentCount < shipmentLimits[company.subscriptionPlan];
   }
+
+
+
+  //  to be used later
+
+  private getNotificationTypes(plan: SubscriptionPlan): string[] {
+    switch (plan) {
+      case SubscriptionPlan.PREMIUM:
+        return ['EMAIL', 'SMS', 'PUSH'];
+      case SubscriptionPlan.BASIC:
+        return ['EMAIL', 'PUSH'];
+      case SubscriptionPlan.FREE_TRIAL:
+        return ['PUSH'];
+      default:
+        return [];
+    }
+  }
 }
 
 
