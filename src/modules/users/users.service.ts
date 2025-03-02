@@ -33,61 +33,66 @@ export class UserService {
   ) {}
 
   // POST /users?companyId=123
-  async createUser (
+  async createUser(
     createUserDto: CreateUserDto,
-    currentUser:any,
+    currentUser: any,
     companyId?: number,
   ) {
     // Log current user information
-    if (currentUser ) {
-      console.log(currentUser, "do we have user")
-     
+    if (currentUser) {
       if (createUserDto.role === Role.DRIVER && currentUser) {
-        return await this.createDriver(createUserDto, currentUser , companyId);
+        return await this.createDriver(createUserDto, currentUser, companyId);
       }
-    } else if(!currentUser && createUserDto.role == Role.DRIVER) {
-      console.log("oops !! we don't have any user")
+      if (createUserDto.role === Role.OFFICER && currentUser) {
+        return await this.createOfficer(createUserDto, currentUser, companyId);
+      }
+    } else if (!currentUser && createUserDto.role == Role.DRIVER) {
+      console.log("oops !! we don't have any user");
       return {
         success: false,
-        message: "Oops! You need to be logged in to add a new driver. Someone with manager or admin access needs to be logged in first.",
-        code: "401" 
-    };
+        message:
+          'Oops! You need to be logged in to add a new driver. Someone with manager or admin access needs to be logged in first.',
+        code: '401',
+      };
+    } else if (createUserDto.role != Role.DRIVER) {
+      console.log(
+        "We don't have user and we can create any other user ",
+        createUserDto,
+      );
+      return await this.createNormalUser(createUserDto);
     }
-    else if(createUserDto.role != Role.DRIVER){
-      console.log("We don't have user and we can create any other user ", createUserDto)
-      return await this.createNormalUser (createUserDto);
-    }
-  
   }
-  
-  private async createDriver(
+  async createOfficer(
     createUserDto: CreateUserDto,
-    currentUser:any,
+    currentUser: any,
     companyId?: number,
   ): Promise<SignupResponseDto> {
-    const currentRole: Role = await this.curentRole(currentUser );
-  
+    const currentRole: Role = await this.curentRole(currentUser);
+
     // Check if the current user has permission to add a driver
-    if (currentRole !== Role.ADMIN && currentRole !== Role.OFFICER) {
-      throw new UnauthorizedException('Only admins and officers can add drivers');
+    if (currentRole !== Role.ADMIN) {
+      throw new UnauthorizedException(
+        'Only admins  can add officers',
+      );
     }
-  
+
     // Check if the company ID is provided and if the driver limit is exceeded
-    if (companyId) {
-      const canAddDriver = await this.subscriptionService.checkDriverLimit(companyId);
-      if (!canAddDriver) {
-        throw new ForbiddenException('Driver limit exceeded for this company.');
-      }
-    }
-  
+    // if (companyId) {
+    //   const canAddDriver =
+    //     await this.subscriptionService.checkDriverLimit(companyId);
+    //   if (!canAddDriver) {
+    //     throw new ForbiddenException('Driver limit exceeded for this company.');
+    //   }
+    // }
+
     // Check if the user already exists
-    const existingUser  = await this.usersRepository.findOne({
+    const existingUser = await this.usersRepository.findOne({
       where: { email: createUserDto.email },
     });
-    if (existingUser ) {
+    if (existingUser) {
       throw new BadRequestException('User  already exists');
     }
-  
+
     // Create the new driver
     const { name, phone, email, password, role } = createUserDto;
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -99,7 +104,7 @@ export class UserService {
       phone,
     });
     await this.usersRepository.save(user);
-  
+
     return new SignupResponseDto(
       'Driver created successfully!',
       user.id,
@@ -109,16 +114,71 @@ export class UserService {
       user.phone,
     );
   }
-  
-  private async createNormalUser (createUserDto: CreateUserDto): Promise<SignupResponseDto> {
+
+  private async createDriver(
+    createUserDto: CreateUserDto,
+    currentUser: any,
+    companyId?: number,
+  ): Promise<SignupResponseDto> {
+    const currentRole: Role = await this.curentRole(currentUser);
+
+    // Check if the current user has permission to add a driver
+    if (currentRole !== Role.ADMIN && currentRole !== Role.OFFICER) {
+      throw new UnauthorizedException(
+        'Only admins and officers can add drivers',
+      );
+    }
+
+    // Check if the company ID is provided and if the driver limit is exceeded
+    if (companyId) {
+      const canAddDriver =
+        await this.subscriptionService.checkDriverLimit(companyId);
+      if (!canAddDriver) {
+        throw new ForbiddenException('Driver limit exceeded for this company.');
+      }
+    }
+
     // Check if the user already exists
-    const existingUser  = await this.usersRepository.findOne({
+    const existingUser = await this.usersRepository.findOne({
       where: { email: createUserDto.email },
     });
-    if (existingUser ) {
+    if (existingUser) {
       throw new BadRequestException('User  already exists');
     }
-  
+
+    // Create the new driver
+    const { name, phone, email, password, role } = createUserDto;
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = this.usersRepository.create({
+      name,
+      email,
+      password: hashedPassword,
+      role,
+      phone,
+    });
+    await this.usersRepository.save(user);
+
+    return new SignupResponseDto(
+      'Driver created successfully!',
+      user.id,
+      user.name,
+      user.email,
+      user.role,
+      user.phone,
+    );
+  }
+
+  private async createNormalUser(
+    createUserDto: CreateUserDto,
+  ): Promise<SignupResponseDto> {
+    // Check if the user already exists
+    const existingUser = await this.usersRepository.findOne({
+      where: { email: createUserDto.email },
+    });
+    if (existingUser) {
+      throw new BadRequestException('User  already exists');
+    }
+
     // Create the new normal user
     const { name, phone, email, password, role } = createUserDto;
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -130,7 +190,7 @@ export class UserService {
       phone,
     });
     await this.usersRepository.save(user);
-  
+
     return new SignupResponseDto(
       'New User Created Successfully!',
       user.id,
