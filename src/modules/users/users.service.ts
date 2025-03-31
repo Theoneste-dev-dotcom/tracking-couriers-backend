@@ -43,6 +43,7 @@ export class UserService {
     currentUser: any,
     companyId?: number,
   ) {
+    
     // Log current user information
     if (currentUser) {
       if (createUserDto.role === Role.DRIVER && currentUser) {
@@ -59,7 +60,7 @@ export class UserService {
       return {
         success: false,
         message:
-          'Oops! You need to be logged in to add a new driver or Officer. Someone with manager or admin access needs to be logged in first.',
+          'Oops! You need to be logged in  as admin/officer to register  a new driver or as admin to register new Officer.',
         code: '401',
       };
     } else if (createUserDto.role != Role.DRIVER) {
@@ -374,7 +375,7 @@ export class UserService {
     return 'You are no longer a member of ' + company.name;
   }
 
-  async getUserCompanies(userId: number) {
+  async getUserCompaniesById(userId: number) {
     const user = await this.usersRepository.findOne({
       where: { id: userId },
       relations: ['companies'],
@@ -390,6 +391,22 @@ export class UserService {
 
     return user.companies;
   }
+  async getUserCompaniesByEmail(email:string) {
+    const user = await this.usersRepository.findOne({
+      where: {email} ,
+      relations: ['companies'],
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${email} NOT FOUND`);
+    }
+
+    if (user.companies.length <= 0) {
+      return "Your haven't joined any company";
+    }
+
+    return user.companies;
+  }
 
   async update(
     id: number,
@@ -397,16 +414,11 @@ export class UserService {
     requestingUser: any,
   ) {
 
-
-    console.log(requestingUser)
     const userToUpdate = await this.usersRepository.findOneBy({ id });
     if (!userToUpdate) {
       throw new NotFoundException('User not found');
     }
 
-    if(!requestingUser){
-      throw new Error("YOU have to first login in order to update driver of officer")
-    }
     if (userToUpdate.role === Role.DRIVER) {
       if(!requestingUser){
         throw new Error("YOU have to first login in order to update driver of officer")
@@ -414,6 +426,7 @@ export class UserService {
       // Driver update logic
       await this.updateDriver(id, updateUserDto, requestingUser, userToUpdate);
     } else if (userToUpdate.role === Role.OFFICER) {
+      console.log(requestingUser, userToUpdate)
       if(!requestingUser){
         throw new Error("YOU have to first login in order to update driver of officer")
       }
@@ -443,7 +456,7 @@ export class UserService {
     ) {
       // check the same company if match
 
-      if (!this.checkSameCompany(requestingUser, userToUpdate)) {
+      if (!this.checkSameCompany(requestingUser, updateUserDto?.companies)) {
         throw new UnauthorizedException(
           'You can only update drivers in your own company',
         );
@@ -488,6 +501,13 @@ export class UserService {
     userToUpdate: any,
   ) {
     if (requestingUser.role === Role.ADMIN) {
+
+      
+      if (!this.checkSameCompany(requestingUser, updateUserDto?.companies)) {
+        throw new UnauthorizedException(
+          'You can only update officers to your own company',
+        );
+      }
       // Admin update
       const adminUpdateDto = updateUserDto as AdminUpdateUserDto; // Type cast
       if (adminUpdateDto.role) {
@@ -523,13 +543,13 @@ export class UserService {
     await this.usersRepository.save(userToUpdate);
   }
 
-  private checkSameCompany(user1: any, user2: any): boolean {
+  private checkSameCompany(user1: any, newCompanies): boolean {
     // Check if user1 and user2 share a company
-    if (!user1.companies || !user2.companies) {
+    if (!user1.companies || !newCompanies) {
       return false;
     }
     for (const company1 of user1.companies) {
-      for (const company2 of user2.companies) {
+      for (const company2 of newCompanies) {
         if (company1.id === company2.id) {
           return true;
         }

@@ -18,28 +18,33 @@ export class AuthService {
 
   async validateUser(email: string, password: string) {
     const user = await this.userService.findByEmail(email);
+    console.log(user)
     const isvalid  =  await bcrypt.compare(password, user.password)
     if(isvalid) {
       return user
     } else {
-      console.log(isvalid, "use is valid??")
-      return user
+     
+      throw new UnauthorizedException('Invalid credentials');
+    
     }
     
   }
 
-  async login(user: UserLoginDto):Promise<LoginResponseDto>{
+  async login(user: UserLoginDto){
     try {
-      const validUser = await this.validateUser(user.email, user.email)
+      const validUser = await this.validateUser(user.email, user.password)
     const payload = { email: validUser.email, sub: validUser.id, role: validUser.role };
     const accessToken = this.jwtService.sign(payload, {secret:this.configService.get<string>('JWT_SECRET_KEY'), expiresIn: '15m' });
     const refreshToken = this.jwtService.sign(payload, {secret:this.configService.get<string>('JWT_SECRET_KEY'), expiresIn: '7d' });
-
+  //  const isPasswordValid = this.
     await this.userService.updateRefreshToken(validUser.id, refreshToken);
-    return new LoginResponseDto("Logged in successfull!! ", accessToken, refreshToken, validUser.name, validUser.email, validUser.role)
+    return new LoginResponseDto(200, "Logged in successfull!! ", accessToken, refreshToken, validUser.name, validUser.email, validUser.role)
     }catch(error) {
       console.log(error)
-      throw new Error("Failed to login for user "+ user.email)
+      return {
+        message: 'Invalid password or Email, Please check your inputs and try again',
+        code: 403
+      }
     }
   }
 
@@ -79,7 +84,9 @@ async generateRefreshToken(user:User):Promise<string> {
     secret: this.configService.get<string>('JWT_SECRET_KEY'),
     expiresIn: '7d'
   })
-  await this.userService.update(user.id, {refreshToken: refreshToken})
+
+  // to be done after
+  // await this.userService.update(user.id, {refreshToken: refreshToken})
   return refreshToken
 }
 }

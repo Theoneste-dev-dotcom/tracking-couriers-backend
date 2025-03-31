@@ -37,4 +37,8 @@ export class DriverUpdateUserDto {
   @IsOptional()
   @IsString()
   phone?: string;
+
+  @IsOptional()
+  @IsArray()
+  companies:number[]
 }

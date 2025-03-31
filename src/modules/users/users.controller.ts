@@ -47,7 +47,12 @@ export class UsersController {
   findAll() {
     return this.usersService.findAll();
   }
-
+  
+  @UseGuards(AuthGuard)
+  @Get(':email')
+  findByEmail(@Param('email') email: string) {
+    return this.usersService.findByEmail(email);
+  }
   @UseGuards(AuthGuard)
   @Get(':id')
   findOne(@Param('id') id: number) {
@@ -69,6 +74,8 @@ export class UsersController {
     return this.usersService.update(id, updateUserDto, req.user);
   }
 
+
+
   @UseGuards(AuthGuard)
   @Delete(':id')
   remove(@Param('id') id: number) {
@@ -76,8 +83,13 @@ export class UsersController {
   }
 
   @Get(':id/companies')
-  getCompanies(@Param('id') id: number) {
-    return this.usersService.getUserCompanies(Number(id));
+  getCompaniesById(@Param('id') id: number) {
+    return this.usersService.getUserCompaniesById(Number(id));
+  }
+
+  @Get(':email/companies')
+  getCompaniesByEmail(@Param('email') userEmail:string) {
+    return this.usersService.getUserCompaniesByEmail(userEmail);
   }
 
   @Put('disjoin/:userId/:companyId')
@@ -87,4 +99,6 @@ export class UsersController {
   ) {
     return this.usersService.disJoinCompany(userid, companyId);
   }
+
+
 }
