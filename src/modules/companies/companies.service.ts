@@ -29,7 +29,7 @@ export class CompaniesService {
     const existingCompany = await this.companyRepository.findOne({
       where: { email: createCompanyDto.email },
     });
-
+   
     if (existingCompany) {
       throw new BadRequestException('A company with this email already exists');
     }

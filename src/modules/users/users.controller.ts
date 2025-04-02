@@ -50,8 +50,8 @@ export class UsersController {
 
   @UseGuards(AuthGuard)
   @Roles(Role.ADMIN)
-  @Get()
-  async findAll(
+  @Get("all")
+  async findAllByRoleAndCompanyId(
     @Query('companyId') companyId?: string,
     @Query('role') role?: Role,
   ) {
@@ -59,6 +59,13 @@ export class UsersController {
     return  users.map((user) => this.mapToDto(user));
   }
   
+
+  @Get()
+  @UseGuards(AuthGuard)
+  async JustGetAll() {
+    return this.usersService.findAll();
+  }
+
   @UseGuards(AuthGuard)
   @Get(':email')
   findByEmail(@Param('email') email: string) {
@@ -68,7 +75,7 @@ export class UsersController {
 
   
   @UseGuards(AuthGuard)
-  @Get(':id')
+  @Get('/specific/:id')
   async findOne(@Param('id') id: number) {
     const user = await this.usersService.findOneById(id);
     return  this.mapToDto(user);

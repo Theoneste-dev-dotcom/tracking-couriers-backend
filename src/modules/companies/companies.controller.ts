@@ -17,11 +17,13 @@ export class CompaniesController {
 
   @Post()
   @UseGuards(AuthGuard,RolesGuard)
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.COMPANY_OWNER)
   create(@Body() createCompanyDto: CreateCompanyDto, @Request() req) {
     const user:User = req.user;
     return this.companiesService.create(createCompanyDto, user);
-  }
+  } 
+
+
 
   @Get()
   findAll() {

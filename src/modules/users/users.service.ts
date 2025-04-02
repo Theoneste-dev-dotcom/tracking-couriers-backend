@@ -319,7 +319,7 @@ export class UserService {
   async findOneById(id: number): Promise<User> {
     const user = await this.usersRepository.findOne({ where: { id } });
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('User not found  why');
     }
     
     return user;
@@ -328,7 +328,7 @@ export class UserService {
   async findUser(id: number): Promise<User> {
     const user = await this.usersRepository.findOne({ where: { id } });
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('User not found  why');
     }
     return user;
   }
@@ -336,7 +336,7 @@ export class UserService {
   async findByEmail(email: string): Promise<User> {
     const user = await this.usersRepository.findOne({ where: { email } });
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('User not found why');
     }
     return user;
   }
@@ -665,7 +665,7 @@ export class UserService {
     await this.usersRepository.save(userToUpdate);
   }
 
-  private async updateNormalUser(
+  private async   updateNormalUser(
     id: number,
     updateUserDto: AdminUpdateUserDto | DriverUpdateUserDto,
     userToUpdate: any,
@@ -674,7 +674,11 @@ export class UserService {
     userToUpdate.name = normalUserUpdateDto.name || userToUpdate.name;
     userToUpdate.email = normalUserUpdateDto.email || userToUpdate.email;
     userToUpdate.phone = normalUserUpdateDto.phone || userToUpdate.phone;
-    await this.usersRepository.save(userToUpdate);
+    userToUpdate.role = normalUserUpdateDto.role || userToUpdate.role;
+    console.log("before => ",userToUpdate)
+    const result = await this.usersRepository.save(userToUpdate);
+    console.log("after => ",result)
+    return result;
   }
 
   private checkSameCompany(user1: any, newCompanies): boolean {
