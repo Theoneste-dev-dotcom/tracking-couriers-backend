@@ -4,11 +4,14 @@ import { CompaniesService } from './companies.service';
 import { CompaniesController } from './companies.controller';
 import { Company } from './entities/company.entity';
 import { AuthModule } from '../auth/auth.module';
+import { User } from '../users/entities/user.entity';
 
 @Module({
   imports: [
   forwardRef(()=>AuthModule),
   TypeOrmModule.forFeature([Company]),
+  TypeOrmModule.forFeature([User]),
+  forwardRef(() => AuthModule),
   
 ],
   controllers: [CompaniesController],

@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
   InternalServerErrorException,
+  ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LessThan, Not, Repository } from 'typeorm';
@@ -14,12 +15,18 @@ import { SubscriptionPlan } from 'src/common/enums/subscription-plan.enum';
 import { removeAllListeners } from 'process';
 import { Shipment } from '../shipments/entities/shipment.entity';
 import { User } from '../users/entities/user.entity';
+import { AssignOwner } from '../users/dto/assign-owner.dto';
+import { Role } from 'src/common/enums/role.enum';
 
 @Injectable()
 export class CompaniesService {
   constructor(
     @InjectRepository(Company)
     private readonly companyRepository: Repository<Company>,
+
+    //injecting the user repository
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>
   ) {}
 
   async create(
@@ -75,6 +82,7 @@ export class CompaniesService {
     }
   }
 
+
   async findCompany(id: number): Promise<Company> {
     const companyFound = await this.companyRepository.findOne({
       where: { id },
@@ -96,6 +104,39 @@ export class CompaniesService {
     } catch (error) {
       throw new InternalServerErrorException('Failed to remove company');
     }
+  }
+
+  async assignCompanyOwner(companyId:number, userId:number) : Promise<void> {
+    const company = await this.companyRepository.findOne({where: {id:companyId}});
+    if(!company) {
+      throw new NotFoundException(`Company with ID ${companyId} not found`);
+    }
+
+    // verify user exists and is a company owner
+    const user = await this.userRepository.findOne({where: {id:userId,role: Role.COMPANY_OWNER}, 
+    relations: ['ownedCompany']});
+
+    if(!user) {
+      throw new NotFoundException(`User with ID ${userId} not found or is not a company owner`);
+    }
+
+    if(user.ownedCompany) {
+      throw new ConflictException(`User already owns company ID ${user.ownedCompany.id}`);
+    }
+
+    if(company.owner) {
+      throw new ConflictException(`Company already has an owner ${company.owner.id}` );
+
+    }
+
+    await this.companyRepository.manager.transaction(
+      async (transactionalEntityManager) => {
+        company.owner = user;
+        await transactionalEntityManager.save(company);
+        user.ownedCompany = company;
+        await transactionalEntityManager.save(user);
+      }
+    )
   }
 
   async initializeCompany(companyId: number): Promise<Company> {

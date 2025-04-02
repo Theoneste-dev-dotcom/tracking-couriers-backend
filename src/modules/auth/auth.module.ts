@@ -17,7 +17,6 @@ import { config } from 'process';
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
         const secret = configService.get<string>('JWT_SECRET_KEY');
-        console.log('JWT_SECRET_KEY:', secret);
         return {
           secret: secret,
           signOptions: { expiresIn: '1h' },

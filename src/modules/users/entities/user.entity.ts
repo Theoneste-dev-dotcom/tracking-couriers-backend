@@ -44,6 +44,7 @@ export class User {
   driverInCompany?: Company;
 
   @OneToOne(()=> Company, (company)=> company.owner)
+  @JoinColumn()
   ownedCompany?: Company;
 
   @CreateDateColumn()
