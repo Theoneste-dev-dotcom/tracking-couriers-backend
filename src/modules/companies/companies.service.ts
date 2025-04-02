@@ -187,18 +187,40 @@ export class CompaniesService {
     return company.shipments; // Return the shipments associated with the company
   }
 
-   async getCompanyUsers(companyId: number): Promise<User[]|undefined> {
-    const company = await this.companyRepository.findOne({
-      where: { id: companyId },
-      relations: ['users'], // Fetch related users
-    });
-
-
-    if (!company) {
-      throw new NotFoundException(`Company with ID ${companyId} not found`);
+  async getCompanyUsers(companyId: number): Promise<User[]> {
+      const company = await this.companyRepository.findOne({
+        where: { id: companyId },
+        relations: [
+          'owner',        // Company owner (OneToOne)
+          'drivers',      // List of drivers (OneToMany)
+          'officers',     // List of officers (OneToMany)
+          'clients'       // List of clients (ManyToMany)
+        ],
+      });
+    
+      if (!company) {
+        throw new NotFoundException(`Company with ID ${companyId} not found`);
+      }
+    
+      // Combine all user types and filter duplicates
+      const allUsers = [
+        company.owner,      // Owner is a single user
+        ...(company.drivers ?? []), 
+        ...(company.officers ?? []),
+        ...(company.clients ?? [])
+      ].filter(Boolean);    // Remove undefined/null values
+    
+      // Remove duplicate users based on ID
+      const uniqueUsers = allUsers.reduce((acc: User[], current: User) => {
+        if (!acc.some(user => user.id === current.id)) {
+          acc.push(current);
+        }
+        return acc;
+      }, []);
+    
+      return uniqueUsers;
     }
-    return company.users; // Return the users associated with the company
-  }
+
 }
 
 

@@ -463,6 +463,42 @@ export class UserService {
   //   return 'You are no longer a member of ' + company.name;
   // }
 
+
+  async getAssociatedCompany(userId: number): Promise<Company | Company[] | null> {
+    const user = await this.usersRepository.findOne({
+      where: { id: userId },
+      relations: [
+        'driverInCompany',
+        'officerInCompany',
+        'clientOfCompanies',
+        'ownedCompany'
+      ],
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    switch (user.role) {
+      case Role.DRIVER:
+        return user.driverInCompany || null;
+        
+      case Role.OFFICER:
+        return user.officerInCompany || null;
+        
+      case Role.CLIENT:
+        return user.clientOfCompanies || [];
+        
+      case Role.COMPANY_OWNER:
+        return user.ownedCompany || null;
+
+      default: // ADMIN or other non-company roles
+        return null;
+    }
+  }
+
+
+
   // async getUserCompanies(userId: number) {
   //   const user = await this.usersRepository.findOne({
   //     where: { id: userId },

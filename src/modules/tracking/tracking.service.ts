@@ -25,8 +25,7 @@ export class TrackingService {
     private shipmentService: ShipmentsService,
   ) {}
 
-
-  // on frontend we will add a button for stargin track for creating a tracking entity, that we will notify him whenever the location is updated 
+  // on frontend we will add a button for stargin track for creating a tracking entity, that we will notify him whenever the location is updated
 
   async create(
     createShipmentUpdateDto: CreateTrackingDto,
@@ -47,10 +46,18 @@ export class TrackingService {
       return null;
     }
     const driver = this.userService.findUser(createTrackingDto.driverId);
-    const companies = this.userService.getUserCompanies(
+
+
+    const company_result = await this.userService.getAssociatedCompany(
       createTrackingDto.driverId,
     );
 
+
+    if(!company_result || Array.isArray(company_result)){
+      throw new Error("driver is not associated with valid company")
+    }
+
+    const driver_company = company_result
     if (!createTrackingDto.shipmentId) {
       ("return you haven't specified the shipment id");
     } else {
@@ -62,12 +69,12 @@ export class TrackingService {
         const receier = this.userService.findUser(shipment.receiverId);
 
         const users = [sender, receier, driver];
-        switch (companies[0].subscriptionPlan) {
+        switch (driver_company.subscriptionPlan) {
           case SubscriptionPlan.PREMIUM:
             await this.sendNotifications(
               createTrackingDto,
               users,
-              companies[0],
+              driver_company,
               ['EMAIL', 'SMS', 'PUSH'],
             );
             break;
@@ -76,7 +83,7 @@ export class TrackingService {
             await this.sendNotifications(
               createTrackingDto,
               users,
-              companies[0],
+              driver_company,
               ['EMAIL', 'PUSH'],
             );
             break;
@@ -85,7 +92,7 @@ export class TrackingService {
             await this.sendNotifications(
               createTrackingDto,
               users,
-              companies[0],
+              driver_company,
               ['PUSH'],
             );
             break;
@@ -159,9 +166,9 @@ export class TrackingService {
         }
       } else {
         if (shipmentDto.shipmentId) {
-            // userId:number, companyId:number, type:NotificationType, message:string, seen:false, related_id:number
+          // userId:number, companyId:number, type:NotificationType, message:string, seen:false, related_id:number
 
-            // using notification type of company will be the notification to be fetched by related admins, and officers
+          // using notification type of company will be the notification to be fetched by related admins, and officers
           const notification: CreateNotificationDto = new CreateNotificationDto(
             users[i].id,
             company.id,

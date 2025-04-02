@@ -18,8 +18,8 @@ export class SubscriptionFilter extends BaseExceptionFilter {
       if (request.user && request.user.sub) {
         const userId = request.user.sub;
         const user = await this.subscriptionService.getUserWithCompany(userId);
-        if (user && user.companies && user.companies.length > 0) {
-          const company = user.companies[0];
+        if (user && user.clientOfCompanies && user.clientOfCompanies.length > 0) {
+          const company = user.clientOfCompanies[0];
           if (!await this.subscriptionService.isSubscriptionValid(company)) {
             response.status(HttpStatus.FORBIDDEN).json({
               statusCode: HttpStatus.FORBIDDEN,
