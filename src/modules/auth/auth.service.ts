@@ -33,18 +33,15 @@ export class AuthService {
   async login(user: UserLoginDto){
     try {
       const validUser = await this.validateUser(user.email, user.password)
-    const payload = { email: validUser.email, sub: validUser.id, role: validUser.role };
+    const payload = { email: validUser.email, sub: validUser.id, role: validUser.role, name: validUser.name };
     const accessToken = this.jwtService.sign(payload, {secret:this.configService.get<string>('JWT_SECRET_KEY'), expiresIn: '15m' });
     const refreshToken = this.jwtService.sign(payload, {secret:this.configService.get<string>('JWT_SECRET_KEY'), expiresIn: '7d' });
   //  const isPasswordValid = this.
     await this.userService.updateRefreshToken(validUser.id, refreshToken);
-    return new LoginResponseDto(200, "Logged in successfull!! ", accessToken, refreshToken, validUser.name, validUser.email, validUser.role)
+    return new LoginResponseDto(validUser.id, 200, "Logged in successfull!! ", accessToken, refreshToken, validUser.name, validUser.email, validUser.role)
     }catch(error) {
       console.log(error)
-      return {
-        message: 'Invalid password or Email, Please check your inputs and try again',
-        code: 403
-      }
+      throw new UnauthorizedException('Invalid credentials, pls check you email and address');
     }
   }
 

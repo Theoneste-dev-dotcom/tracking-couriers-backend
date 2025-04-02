@@ -1,4 +1,4 @@
-import { IsEmail, IsEnum, IsString, IsNumber } from 'class-validator';
+import { IsEmail, IsEnum, IsString, IsNumber, isNumber } from 'class-validator';
 import { Role } from 'src/common/enums/role.enum';
 
 export class LoginResponseDto {
@@ -23,7 +23,10 @@ export class LoginResponseDto {
   @IsNumber()
   code: number;
 
-  constructor(code:number, message: string, token: string, refreshToken: string, name: string, email: string, role: Role) {
+  @IsNumber()
+  id: number
+
+  constructor(id:number, code:number, message: string, token: string, refreshToken: string, name: string, email: string, role: Role) {
     this.code = code
     this.message = message;
     this.token = token;
@@ -31,5 +34,6 @@ export class LoginResponseDto {
     this.name = name;
     this.email = email;
     this.role = role;
+    this.id = id;
   }
 }

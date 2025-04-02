@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, ParseIntPipe, Put } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, ParseIntPipe, Put, Request } from '@nestjs/common';
 import { CompaniesService } from './companies.service';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
@@ -7,6 +7,7 @@ import { Shipment } from '../shipments/entities/shipment.entity';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { Role } from 'src/common/enums/role.enum';
+import { User } from '../users/entities/user.entity';
 
 
 @Controller('companies')
@@ -17,8 +18,9 @@ export class CompaniesController {
   @Post()
   @UseGuards(AuthGuard,RolesGuard)
   @Roles(Role.ADMIN)
-  create(@Body() createCompanyDto: CreateCompanyDto) {
-    return this.companiesService.create(createCompanyDto);
+  create(@Body() createCompanyDto: CreateCompanyDto, @Request() req) {
+    const user:User = req.user;
+    return this.companiesService.create(createCompanyDto, user);
   }
 
   @Get()
@@ -29,6 +31,11 @@ export class CompaniesController {
   @Get(':id')
   findOne(@Param('id') id: number) {
     return this.companiesService.findOne(id);
+  }
+
+  @Get(":id/users")
+  async findCompanyUsers(@Param('id')  id:number) {
+    return this.companiesService.getCompanyUsers(id);
   }
 
 

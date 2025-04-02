@@ -13,6 +13,7 @@ import { CompanyResponseDto } from './dto/company-response.dto';
 import { SubscriptionPlan } from 'src/common/enums/subscription-plan.enum';
 import { removeAllListeners } from 'process';
 import { Shipment } from '../shipments/entities/shipment.entity';
+import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class CompaniesService {
@@ -23,6 +24,7 @@ export class CompaniesService {
 
   async create(
     createCompanyDto: CreateCompanyDto,
+    current_user
   ): Promise<CompanyResponseDto> {
     const existingCompany = await this.companyRepository.findOne({
       where: { email: createCompanyDto.email },
@@ -32,7 +34,12 @@ export class CompaniesService {
       throw new BadRequestException('A company with this email already exists');
     }
 
+    if(current_user.role !== 'admin'){
+      throw new BadRequestException('Only admins can create companies');
+    }
+
     const company = this.companyRepository.create(createCompanyDto);
+   
     return this.companyRepository.save(company);
   }
 
@@ -179,4 +186,19 @@ export class CompaniesService {
 
     return company.shipments; // Return the shipments associated with the company
   }
+
+   async getCompanyUsers(companyId: number): Promise<User[]|undefined> {
+    const company = await this.companyRepository.findOne({
+      where: { id: companyId },
+      relations: ['users'], // Fetch related users
+    });
+
+
+    if (!company) {
+      throw new NotFoundException(`Company with ID ${companyId} not found`);
+    }
+    return company.users; // Return the users associated with the company
+  }
 }
+
+

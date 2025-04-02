@@ -1,47 +1,56 @@
-import { SubscriptionPlan } from 'src/common/enums/subscription-plan.enum';
-import { Shipment } from 'src/modules/shipments/entities/shipment.entity';
-import { User } from 'src/modules/users/entities/user.entity';
-import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany, ManyToMany } from 'typeorm';
+  import { SubscriptionPlan } from 'src/common/enums/subscription-plan.enum';
+  import { Shipment } from 'src/modules/shipments/entities/shipment.entity';
+  import { User } from 'src/modules/users/entities/user.entity';
+  import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany, ManyToMany, OneToOne } from 'typeorm';
 
-@Entity('companies')
-export class Company {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @Entity('companies')
+  export class Company {
+    @PrimaryGeneratedColumn()
+    id: number;
 
-  @Column({ unique: true })
-  name: string;
+    @Column({ unique: true })
+    name: string;
 
-  @Column()
-  address: string;
+    @Column()
+    address: string;
 
-  @Column({ unique: true })
-  email: string;
+    @Column({ unique: true })
+    email: string;
 
-  @Column()
-  phone: string;
+    @Column()
+    phone: string;
 
-  @Column({
-    type: 'enum',
-    enum: SubscriptionPlan,
-    default: SubscriptionPlan.FREE_TRIAL, 
-  })
-  subscriptionPlan: SubscriptionPlan;
+    @Column({
+      type: 'enum',
+      enum: SubscriptionPlan,
+      default: SubscriptionPlan.FREE_TRIAL, 
+    })
+    subscriptionPlan: SubscriptionPlan;
 
-  @Column({ type: 'timestamp', nullable: true })
-  subscriptionExpiry: Date | null;
-  
-  @ManyToMany(() => User, (user)=> user.companies)
-  users?:User[];
+    @Column({ type: 'timestamp', nullable: true })
+    subscriptionExpiry: Date | null;
+    
+    @ManyToMany(()=> User, (user)=> user.clientOfCompanies)
+    clients:User[];
 
-  @OneToMany(() => Shipment, (shipment) => shipment.company)
-  shipments: Shipment[]; 
+    @OneToMany(()=> User, (user)=> user.driverInCompany)
+    drivers?:User[];
 
-  @Column({nullable: true})
-  logoUrl?: string;
+    @OneToMany(()=>User, (officer)=> officer.officerInCompany)
+    officers?:User[];
 
-  @CreateDateColumn()
-  createdAt: Date;
+    @OneToOne(()=> User, (owner)=> owner.ownedCompany)
+    owner:User;
 
-  @UpdateDateColumn()
-  updatedAt: Date;
-}
+    @OneToMany(() => Shipment, (shipment) => shipment.company)
+    shipments: Shipment[]; 
+
+    @Column({nullable: true})
+    logoUrl?: string;
+
+    @CreateDateColumn()
+    createdAt: Date;
+
+    @UpdateDateColumn()
+    updatedAt: Date;
+  }

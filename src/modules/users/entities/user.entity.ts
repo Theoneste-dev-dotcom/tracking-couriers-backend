@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, ManyToMany, JoinTable } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, ManyToMany, JoinTable, OneToOne } from 'typeorm';
 import { Company } from '../../companies/entities/company.entity';
 import { IsString } from 'class-validator';
 import { Role } from 'src/common/enums/role.enum';
@@ -23,11 +23,11 @@ export class User {
   @Column( {nullable: true})
   phone?: string;
 
-  @ManyToMany(() => Company, (company) => company.users, {nullable: true})
+  @ManyToMany(() => Company, (company) => company.clients, {nullable: true})
   @JoinTable({
-    name: 'user_companies', // Name of the join table
+    name: 'company_clients', // Name of the join table
     joinColumn: {
-      name: 'user_id',
+      name: 'client_id',
       referencedColumnName: 'id',
     },
     inverseJoinColumn: {
@@ -35,7 +35,16 @@ export class User {
       referencedColumnName: 'id',
     },
   })
-  companies: Company[];
+  clientOfCompanies: Company[];
+
+  @ManyToOne(()=> Company, company=> company.officers)
+  officerInCompany?: Company;
+
+  @ManyToOne(()=> Company, company=> company.drivers)
+  driverInCompany?: Company;
+
+  @OneToOne(()=> Company, (company)=> company.owner)
+  ownedCompany?: Company;
 
   @CreateDateColumn()
   createdAt: Date;

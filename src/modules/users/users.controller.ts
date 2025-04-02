@@ -19,6 +19,11 @@ import {
   AdminUpdateUserDto,
   DriverUpdateUserDto,
 } from './dto/update-user1.dto';
+import { Roles } from 'src/common/decorators/roles.decorator';
+import { Role } from 'src/common/enums/role.enum';
+import { UserResponseDto } from './dto/user-reponse.dto';
+import { User } from './entities/user.entity';
+import { AssignRoleDto } from './dto/assing-role.dto';
 
 @Controller('users')
 export class UsersController {
@@ -39,13 +44,19 @@ export class UsersController {
         companyId,
       );
     }
-    return this.usersService.createUser(createUserDto, req.user, companyId);
+    return   await this.usersService.createUser(createUserDto, req.user, companyId);
+   
   }
 
   @UseGuards(AuthGuard)
+  @Roles(Role.ADMIN)
   @Get()
-  findAll() {
-    return this.usersService.findAll();
+  async findAll(
+    @Query('companyId') companyId?: string,
+    @Query('role') role?: Role,
+  ) {
+    const users = await this.usersService.findAllByTypeAndCompany(role, companyId);
+    return  users.map((user) => this.mapToDto(user));
   }
   
   @UseGuards(AuthGuard)
@@ -53,10 +64,14 @@ export class UsersController {
   findByEmail(@Param('email') email: string) {
     return this.usersService.findByEmail(email);
   }
+
+
+  
   @UseGuards(AuthGuard)
   @Get(':id')
-  findOne(@Param('id') id: number) {
-    return this.usersService.findOneById(id);
+  async findOne(@Param('id') id: number) {
+    const user = await this.usersService.findOneById(id);
+    return  this.mapToDto(user);
   }
 
   @UseGuards(AuthGuard)
@@ -77,28 +92,58 @@ export class UsersController {
 
 
   @UseGuards(AuthGuard)
+  @Roles(Role.ADMIN, Role.CLIENT, Role.COMPANY_OWNER)
   @Delete(':id')
   remove(@Param('id') id: number) {
     return this.usersService.remove(id);
   }
 
-  @Get(':id/companies')
-  getCompaniesById(@Param('id') id: number) {
-    return this.usersService.getUserCompaniesById(Number(id));
+
+  @Post(':id/assign-role')
+  @Roles(Role.ADMIN)
+  async assignRole(
+    @Param('id') id: number,
+    @Body('role') assignRoleDto: AssignRoleDto
+  ): Promise<UserResponseDto> {
+    const user = await this.usersService.assignRole(id, assignRoleDto);
+    return this.mapToDto(user);
   }
+  // @Get(':id/companies')
+  // getCompaniesById(@Param('id') id: number) {
+  //   return this.usersService.getUserCompanies(Number(id));
+  // }
 
-  @Get(':email/companies')
-  getCompaniesByEmail(@Param('email') userEmail:string) {
-    return this.usersService.getUserCompaniesByEmail(userEmail);
+  // @Get('email/:email/companies')
+  // getCompaniesByEmail(@Param('email') userEmail:string) {
+  //   return this.usersService.getUserCompaniesByEmail(userEmail);
+  // }
+
+  // @Put('disjoin/:userId/:companyId')
+  // disJoinCompany(
+  //   @Param('userId') userid: number,
+  //   @Param('companyId') companyId: number,
+  // ) {
+  //   return this.usersService.disJoinCompany(userid, companyId);
+  // }
+
+
+  private mapToDto(user: User): UserResponseDto {
+    const dto = new UserResponseDto(user.id, user.name, user.email, user.role, user.phone);
+    switch (user.role) {
+      case Role.DRIVER:
+        dto.companyId = user.driverInCompany?.id;
+        break;
+      case Role.OFFICER:
+        dto.companyId = user.officerInCompany?.id;
+        break;
+      case Role.CLIENT:
+        dto.companyIds = user.clientOfCompanies?.map(c => c.id);
+        break;
+      case Role.COMPANY_OWNER:
+        dto.ownedCompanyId = user.ownedCompany?.id;
+        break;
+    }
+
+    return dto;
   }
-
-  @Put('disjoin/:userId/:companyId')
-  disJoinCompany(
-    @Param('userid') userid: number,
-    @Param('companyId') companyId: number,
-  ) {
-    return this.usersService.disJoinCompany(userid, companyId);
-  }
-
-
 }
