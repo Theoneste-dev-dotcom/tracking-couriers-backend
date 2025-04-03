@@ -254,8 +254,13 @@ export class UserService {
     }
 
     const company = await this.company_repo.findOne({
-        where: {id:  companyId, }
+        where: {id:  companyId},
+        relations: ['drivers']
     })
+
+    if(!company) {
+      throw new NotFoundException('Company not found');
+    }
 
     // Create the new driver
     const { name, phone, email, password, role } = createUserDto;
@@ -266,6 +271,7 @@ export class UserService {
       password: hashedPassword,
       role,
       phone,
+      driverInCompany: company,
     });
     await this.usersRepository.save(user);
 
