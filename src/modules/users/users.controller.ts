@@ -75,6 +75,11 @@ export class UsersController {
   }
 
 
+  @UseGuards(AuthGuard)
+  @Get(':id/company')
+  async getUserCompanies(@Param('id') id: number) {
+    return this.usersService.getAssociatedCompany(id);
+  }
   
   @UseGuards(AuthGuard)
   @Get('/specific/:id')
