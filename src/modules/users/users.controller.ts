@@ -36,8 +36,10 @@ export class UsersController {
     @Query('companyId') companyId?: number,
     @Query('currentId') currentId?: number,
   ) {
+   
     if (currentId) {
       const currentUser = await this.usersService.findOneById(currentId);
+      
       return this.usersService.createUser(
         createUserDto,
         currentUser,

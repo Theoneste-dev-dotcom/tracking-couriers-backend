@@ -41,8 +41,8 @@ export class CompaniesService {
       throw new BadRequestException('A company with this email already exists');
     }
 
-    if(current_user.role !== 'admin'){
-      throw new BadRequestException('Only admins can create companies');
+    if(current_user.role !== 'company_owner'){
+      throw new BadRequestException('Only owners are able to create companies');
     }
 
     const company = this.companyRepository.create(createCompanyDto);

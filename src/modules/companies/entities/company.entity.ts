@@ -45,6 +45,9 @@
     @OneToMany(() => Shipment, (shipment) => shipment.company)
     shipments: Shipment[]; 
 
+    @OneToOne(()=> User, (admin)=> admin.adminInCompany)
+    admin:User;
+
     @Column({nullable: true})
     logoUrl?: string;
 

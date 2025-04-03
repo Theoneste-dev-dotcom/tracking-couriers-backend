@@ -26,6 +26,7 @@ export class CompaniesController {
 
 
 
+  // assigning owner to the company with teh company id and the owner path body {userId}
   @Put(':id/owner')
   @UseGuards(AuthGuard,RolesGuard)
   @Roles(Role.ADMIN, Role.COMPANY_OWNER)

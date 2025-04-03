@@ -62,13 +62,22 @@ export class UserService {
   ) {
     // Log current user information
     if (currentUser) {
+      if (createUserDto.role === Role.ADMIN) {
+        return this.handleAdminCreation(createUserDto, currentUser);
+      }
       if (createUserDto.role === Role.DRIVER && currentUser) {
         return await this.createDriver(createUserDto, currentUser, companyId);
       }
       if (createUserDto.role === Role.OFFICER && currentUser) {
         return await this.createOfficer(createUserDto, currentUser, companyId);
       }
-    } else if (
+
+
+    }else if(!currentUser && createUserDto.role == Role.ADMIN) {
+      throw new UnauthorizedException("your must be logged in as owner to register new admin");
+    }
+    
+    else if (
       (!currentUser && createUserDto.role == Role.DRIVER) ||
       createUserDto.role == Role.OFFICER
     ) {
@@ -83,6 +92,72 @@ export class UserService {
       return await this.createNormalUser(createUserDto);
     }
   }
+
+  private async handleAdminCreation(
+    createUserDto: CreateUserDto,
+    currentUser: User
+  ) {
+    // Verify current user is a company owner
+    const ownerCompany = await this.company_repo.findOne({
+      where: { owner: { id: currentUser.id } },
+      relations: ['owner']
+    });
+  
+    if (!ownerCompany) {
+      throw new ForbiddenException(
+        'Only company owners can create admin users'
+      );
+    }
+  
+    // Verify admin doesn't already exist for this company
+    const existingAdmin = await this.usersRepository.findOne({
+      where: { 
+        role: Role.ADMIN,
+        ownedCompany: { id: ownerCompany.id } 
+      }
+    });
+  
+    if (existingAdmin) {
+      throw new ConflictException(
+        'This company already has an admin user'
+      );
+    }
+  
+    // Create the admin
+    return this.createAdminUser(createUserDto, ownerCompany, currentUser);
+  }
+
+  private async createAdminUser(
+    createUserDto: CreateUserDto,
+    company: Company,
+    currentUser: User
+  ) {
+    if (!company.owner || company.owner.id !== currentUser.id) {
+      throw new ForbiddenException(
+        'Only the company owner can create admin users'
+      );
+    }
+
+    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+    const admin = this.usersRepository.create({
+      ...createUserDto,
+      password: hashedPassword,
+      role: Role.ADMIN,
+      adminInCompany: company,
+    });
+  
+    await this.usersRepository.save(admin);
+    return {
+      success: true,
+      message: 'Admin created successfully',
+      data: {
+        id: admin.id,
+        name: admin.name,
+        email: admin.email, 
+        companyId: company.id
+      }
+    };
+  }
   async createOfficer(
     createUserDto: CreateUserDto,
     currentUser: any,
@@ -91,7 +166,7 @@ export class UserService {
     const currentRole: Role = await this.curentRole(currentUser);
 
     // Check if the current user has permission to add a driver
-    if (currentRole !== Role.ADMIN) {
+    if (currentRole !== Role.ADMIN && currentRole !== Role.COMPANY_OWNER) {
       throw new UnauthorizedException('Only admins  can add officers');
     }
 
@@ -114,20 +189,31 @@ export class UserService {
       throw new BadRequestException('User  already exists');
     }
 
+    const company = await this.company_repo.findOne({
+      where: {id: companyId},
+      relations: ['officers']
+    });
+
+    if (!company) {
+      throw new NotFoundException('Company not found');
+    }
+
+   
     // Create the new driver
     const { name, phone, email, password, role } = createUserDto;
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = this.usersRepository.create({
+    const user = await this.usersRepository.create({
       name,
       email,
       password: hashedPassword,
       role,
       phone,
+      officerInCompany: company,
     });
     await this.usersRepository.save(user);
 
     return new SignupResponseDto(
-      'Driver created successfully!',
+      'Officer created successfully!',
       user.id,
       user.name,
       user.email,
@@ -144,7 +230,7 @@ export class UserService {
     const currentRole: Role = await this.curentRole(currentUser);
 
     // Check if the current user has permission to add a driver
-    if (currentRole !== Role.ADMIN && currentRole !== Role.OFFICER) {
+    if (currentRole !== Role.ADMIN && currentRole !== Role.OFFICER && currentRole !== Role.COMPANY_OWNER) {
       throw new UnauthorizedException(
         'Only admins and officers can add drivers',
       );
@@ -166,6 +252,10 @@ export class UserService {
     if (existingUser) {
       throw new BadRequestException('User  already exists');
     }
+
+    const company = await this.company_repo.findOne({
+        where: {id:  companyId, }
+    })
 
     // Create the new driver
     const { name, phone, email, password, role } = createUserDto;
@@ -750,15 +840,13 @@ export class UserService {
   }
 
 
-  async assignRole(userId:number, dto:AssignRoleDto):Promise<User> {
-  
-  const user = await this.findUser(userId);
+  async assignRole(userId: number, dto: AssignRoleDto): Promise<User> {
+    const user = await this.findUser(userId);
+    await this.handleRoleTransition(user, dto.role, dto.companyId);
+    await this.handleRoleSpecificOperations(user, dto);
+    return this.usersRepository.save(user);
+  }
 
-  await this.handleRoleTransition(user, dto.role, dto.companyId);
-  await this.handleRoleSpecificOperations(user, dto);
-
-  return await this.usersRepository.save(user);
- }
 
 
   private async handleRoleTransition(user: User, role: Role, companyId: number): Promise<void> {
