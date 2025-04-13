@@ -353,7 +353,7 @@ export class UserService {
   }
 
 
-  async findAllByTypeAndCompany(role?: Role, companyId?: string): Promise<User[]> {
+  async findAllByTypeAndCompany(role: Role, companyId: string): Promise<User[]> {
     const query = this.usersRepository.createQueryBuilder('user')
       .where('user.role = :role', { role });
 
@@ -365,9 +365,16 @@ export class UserService {
         case Role.OFFICER:
           query.andWhere('user.officerInCompanyId = :id', { id:companyId });
           break;
+        case Role.COMPANY_OWNER:
+          query.andWhere('user.ownedCompanyId = :id', { id:companyId });
+          break;
+        case Role.ADMIN:
+          query.andWhere('user.adminInCompanyId = :id', { id:companyId });
+          break;
         case Role.CLIENT:
           query.innerJoin('user.clientOfCompanies', 'company', 'company.id = :id', { id:companyId });
           break;
+    
       }
     }
     return await query.getMany();

@@ -10,6 +10,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { CronModule } from './cron-jobs/cron.module';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
+import { BranchesModule } from './branches/branches.module';
 
 @Module({
   imports: [
@@ -41,7 +42,8 @@ import { SubscriptionModule } from './modules/subscription/subscription.module';
     TrackingModule,
     NotificationsModule,
     CronModule,
-    SubscriptionModule
+    SubscriptionModule,
+    BranchesModule
   ],
 
   controllers:[AppController],

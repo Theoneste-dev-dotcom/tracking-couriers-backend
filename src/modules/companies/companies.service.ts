@@ -45,9 +45,12 @@ export class CompaniesService {
       throw new BadRequestException('Only owners are able to create companies');
     }
 
-    const company = this.companyRepository.create(createCompanyDto);
-   
-    return this.companyRepository.save(company);
+    const company1 =  this.companyRepository.create(createCompanyDto);
+
+ 
+    const company = await  this.companyRepository.save(company1);
+    await this.assignCompanyOwner(company.id, current_user.sub)
+   return company
   }
 
   async findAll(): Promise<CompanyResponseDto[]> {

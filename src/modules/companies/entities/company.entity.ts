@@ -1,4 +1,5 @@
-  import { SubscriptionPlan } from 'src/common/enums/subscription-plan.enum';
+  import { Branch } from 'src/branches/entities/branch.entity';
+import { SubscriptionPlan } from 'src/common/enums/subscription-plan.enum';
   import { Shipment } from 'src/modules/shipments/entities/shipment.entity';
   import { User } from 'src/modules/users/entities/user.entity';
   import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany, ManyToMany, OneToOne } from 'typeorm';
@@ -47,6 +48,12 @@
 
     @OneToOne(()=> User, (admin)=> admin.adminInCompany)
     admin:User;
+
+
+    @OneToMany(()=> Branch, (branch)=> branch.company)
+    branches: Branch[]
+    // @OneToMany(()=> Branch, (branch)=> branch.companyId)
+    // branches: Branch[]
 
     @Column({nullable: true})
     logoUrl?: string;

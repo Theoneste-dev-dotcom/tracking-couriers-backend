@@ -50,6 +50,8 @@ export class User {
   @OneToOne(()=> Company, (comp)=> comp.admin)
   @JoinColumn()
   adminInCompany?:Company
+
+  
   
   @CreateDateColumn()
   createdAt: Date;

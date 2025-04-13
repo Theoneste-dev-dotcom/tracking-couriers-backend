@@ -54,9 +54,10 @@ export class UsersController {
   @Roles(Role.ADMIN)
   @Get("all")
   async findAllByRoleAndCompanyId(
-    @Query('companyId') companyId?: string,
-    @Query('role') role?: Role,
+    @Query('companyId') companyId: string,
+    @Query('role') role: Role,
   ) {
+    console.log(companyId, role)
     const users = await this.usersService.findAllByTypeAndCompany(role, companyId);
     return  users.map((user) => this.mapToDto(user));
   }
@@ -69,16 +70,16 @@ export class UsersController {
   }
 
   @UseGuards(AuthGuard)
-  @Get(':email')
+  @Get('specific/user/:email')
   findByEmail(@Param('email') email: string) {
     return this.usersService.findByEmail(email);
   }
 
 
   @UseGuards(AuthGuard)
-  @Get(':id/company')
-  async getUserCompanies(@Param('id') id: number) {
-    return this.usersService.getAssociatedCompany(id);
+  @Get('user-company/company')
+  async getUserCompanies(@Request() req) {
+    return this.usersService.getAssociatedCompany(req.user.sub);
   }
   
   @UseGuards(AuthGuard)

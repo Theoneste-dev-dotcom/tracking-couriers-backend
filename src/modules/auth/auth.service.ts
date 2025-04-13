@@ -34,7 +34,7 @@ export class AuthService {
     try {
       const validUser = await this.validateUser(user.email, user.password)
     const payload = { email: validUser.email, sub: validUser.id, role: validUser.role, name: validUser.name };
-    const accessToken = this.jwtService.sign(payload, {secret:this.configService.get<string>('JWT_SECRET_KEY'), expiresIn: '15m' });
+    const accessToken = this.jwtService.sign(payload, {secret:this.configService.get<string>('JWT_SECRET_KEY'), expiresIn: '2d' });
     const refreshToken = this.jwtService.sign(payload, {secret:this.configService.get<string>('JWT_SECRET_KEY'), expiresIn: '7d' });
   //  const isPasswordValid = this.
     await this.userService.updateRefreshToken(validUser.id, refreshToken);
