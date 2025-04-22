@@ -8,6 +8,8 @@ import { SubscriptionPlan } from 'src/common/enums/subscription-plan.enum';
 import { Role } from 'src/common/enums/role.enum';
 import { Subscription } from './subscription.entity';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
+import { Driver } from '../users/entities/driver.entity';
+import { Officer } from '../users/entities/officers.entity';
 
 @Injectable()
 export class SubscriptionService {
@@ -17,6 +19,14 @@ export class SubscriptionService {
     
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    
+    @InjectRepository(Driver)
+    private driverRepository: Repository<Driver>,
+
+    @InjectRepository(Officer)
+    private officerRepository: Repository<Officer>,
+
+
 
     @InjectRepository(Shipment)
     private shipmentRepository: Repository<Shipment>,
@@ -114,11 +124,10 @@ export class SubscriptionService {
     if (!company) {
       return false;
     }
-    const drivers = await this.userRepository
-      .createQueryBuilder('user')
-      .innerJoin('user.companies', 'company')
+    const drivers = await this.driverRepository
+      .createQueryBuilder('driver')
+      .innerJoin('driver.driverInCompany', 'company')
       .where('company.id = :companyId', { companyId })
-      .andWhere('user.role = :role', { role: Role.DRIVER })
       .getCount();
 
     switch (company.subscriptionPlan) {
@@ -139,11 +148,10 @@ export class SubscriptionService {
         return false; // If there's no company, we can't check the limit
     }
 
-    const officers = await this.userRepository
-        .createQueryBuilder('user')
-        .innerJoin('user.companies', 'company')
-        .where('company.id = :companyId', { companyId })
-        .andWhere('user.role = :role', { role: Role.OFFICER }) // Changed to OFFICER
+    const officers = await this.officerRepository
+        .createQueryBuilder('officer')
+        .innerJoin('officer.officerInCompany', 'company')
+        .where('company.id = :companyId', { companyId }) 
         .getCount();
 
     switch (company.subscriptionPlan) {

@@ -1,7 +1,24 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, ManyToMany, JoinTable, OneToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToMany,
+  JoinTable,
+  OneToOne,
+  OneToMany,
+} from 'typeorm';
 import { Company } from '../../companies/entities/company.entity';
 import { IsString } from 'class-validator';
 import { Role } from 'src/common/enums/role.enum';
+import { Driver } from './driver.entity';
+import { CompanyOwner } from './company_owner.entity';
+import { Officer } from './officers.entity';
+import { Admin } from './admins.entity';
+import { Client } from './client.entity';
 
 @Entity('users')
 export class User {
@@ -20,39 +37,38 @@ export class User {
   @Column()
   role: Role;
 
-  @Column( {nullable: true})
+  @Column({ nullable: true })
   phone?: string;
-
-  @ManyToMany(() => Company, (company) => company.clients, {nullable: true})
-  @JoinTable({
-    name: 'company_clients', // Name of the join table
-    joinColumn: {
-      name: 'client_id',
-      referencedColumnName: 'id',
-    },
-    inverseJoinColumn: {
-      name: 'company_id',
-      referencedColumnName: 'id',
-    },
-  })
-  clientOfCompanies: Company[];
-
-  @ManyToOne(()=> Company, company=> company.officers)
-  officerInCompany?: Company;
-
-  @ManyToOne(()=> Company, company=> company.drivers)
-  driverInCompany?: Company;
-
-  @OneToOne(()=> Company, (company)=> company.owner)
-  @JoinColumn()
-  ownedCompany?: Company;
-
-  @OneToOne(()=> Company, (comp)=> comp.admin)
-  @JoinColumn()
-  adminInCompany?:Company
-
   
-  
+  @Column({ nullable: true })
+  address?: string;
+
+  @Column({ nullable: true })
+  about?: string;
+
+  @OneToMany(() => CompanyOwner, (company_ow) => company_ow.user)
+  @JoinTable()
+  owners: CompanyOwner[];
+
+  @OneToMany(() => Driver, (driver) => driver.user)
+  @JoinTable()
+  drivers: Driver[];
+
+  @OneToMany(() => Officer, (officer) => officer.user)
+  @JoinTable()
+  officers: Officer[];
+
+  @OneToMany(() => Admin, (admin) => admin.user)
+  @JoinTable()
+  admins: Admin[];
+
+  @OneToMany(() => Client, (client) => client.user)
+  @JoinTable()
+  clients: Client[];
+
+  @Column({ nullable: true })
+  profilePic?: string;
+
   @CreateDateColumn()
   createdAt: Date;
 
@@ -60,5 +76,5 @@ export class User {
   updatedAt: Date;
 
   @IsString()
-  refreshToken?:string;
+  refreshToken?: string;
 }

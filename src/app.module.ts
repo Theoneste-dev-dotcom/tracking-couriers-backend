@@ -11,9 +11,16 @@ import { AppController } from './app.controller';
 import { CronModule } from './cron-jobs/cron.module';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
 import { BranchesModule } from './branches/branches.module';
+import { rootCertificates } from 'tls';
 
+import { join } from 'path';
+import { ServeStaticModule } from '@nestjs/serve-static';
 @Module({
   imports: [
+  ServeStaticModule.forRoot({ 
+    rootPath: join(__dirname, '..', 'uploads','profilepics'),
+    serveRoot: '/uploads/profilepics', // Adjust the path to your static files
+  }),
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',

@@ -21,12 +21,12 @@ export class BranchesService {
 
   async findCompanyBranches(companyId: number) {
     let branches = await this.branchRepository.find({relations: ['company']})
+    console.log(branches)
     return branches.filter((branch)=> branch.company.id == companyId)
   }
  async createBranch(createBranchDto: CreateBranchDto) {
    // check if the provided company exists
    const found_company =  await this.companyRepository.findOne({where: {id: createBranchDto.companyId}});
-
    if(!found_company) {
     return new NotFoundException('The provided Company doesn\'t exist')
    }
@@ -39,10 +39,7 @@ export class BranchesService {
     phone_number: createBranchDto.phone_number,
    }
    let branch = this.branchRepository.create(branch_dto) 
-
-   console.log(branch)  
    branch.company = found_company
-
    return  await this.branchRepository.save(branch);
   }
 

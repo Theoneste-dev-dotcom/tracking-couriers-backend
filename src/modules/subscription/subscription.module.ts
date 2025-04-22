@@ -9,6 +9,8 @@ import { Company } from "../companies/entities/company.entity";
 import { User } from "../users/entities/user.entity";
 import { Shipment } from "../shipments/entities/shipment.entity";
 import { Subscription } from "./subscription.entity";
+import { Driver } from "../users/entities/driver.entity";
+import { Officer } from "../users/entities/officers.entity";
 
 
 @Module({
@@ -16,6 +18,8 @@ import { Subscription } from "./subscription.entity";
         TypeOrmModule.forFeature([Company]),
         TypeOrmModule.forFeature([User]),
         TypeOrmModule.forFeature([Shipment]),
+        TypeOrmModule.forFeature([Driver]),
+        TypeOrmModule.forFeature([Officer]),
         TypeOrmModule.forFeature([Subscription]),
         CompaniesModule,
         ShipmentsModule,

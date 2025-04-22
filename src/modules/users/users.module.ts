@@ -7,12 +7,22 @@ import { User } from './entities/user.entity';
 import { CompaniesModule } from '../companies/companies.module';
 import { Company } from '../companies/entities/company.entity';
 import { SubscriptionModule } from '../subscription/subscription.module';
+import { Admin } from './entities/admins.entity';
+import { Driver } from './entities/driver.entity';
+import { Officer } from './entities/officers.entity';
+import { CompanyOwner } from './entities/company_owner.entity';
+import { Client } from './entities/client.entity';
 
 @Module({
   imports:[forwardRef(()=> AuthModule), 
     TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([Admin]),
+    TypeOrmModule.forFeature([Driver]),
+    TypeOrmModule.forFeature([Officer]),
+    TypeOrmModule.forFeature([Client]),
+    TypeOrmModule.forFeature([CompanyOwner]),
     TypeOrmModule.forFeature([Company]),
-    CompaniesModule,
+    forwardRef(()=>CompaniesModule),
     forwardRef(()=>SubscriptionModule),
   ],
   controllers: [UsersController],

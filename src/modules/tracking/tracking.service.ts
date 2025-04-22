@@ -49,7 +49,7 @@ export class TrackingService {
 
 
     const company_result = await this.userService.getAssociatedCompany(
-      createTrackingDto.driverId,
+      createTrackingDto.driverId, (await driver).role
     );
 
 
@@ -69,34 +69,34 @@ export class TrackingService {
         const receier = this.userService.findUser(shipment.receiverId);
 
         const users = [sender, receier, driver];
-        switch (driver_company.subscriptionPlan) {
-          case SubscriptionPlan.PREMIUM:
-            await this.sendNotifications(
-              createTrackingDto,
-              users,
-              driver_company,
-              ['EMAIL', 'SMS', 'PUSH'],
-            );
-            break;
+        // switch (driver_company.subscriptionPlan) {
+        //   case SubscriptionPlan.PREMIUM:
+        //     await this.sendNotifications(
+        //       createTrackingDto,
+        //       users,
+        //       driver_company,
+        //       ['EMAIL', 'SMS', 'PUSH'],
+        //     );
+        //     break;
 
-          case SubscriptionPlan.BASIC:
-            await this.sendNotifications(
-              createTrackingDto,
-              users,
-              driver_company,
-              ['EMAIL', 'PUSH'],
-            );
-            break;
+        //   case SubscriptionPlan.BASIC:
+        //     await this.sendNotifications(
+        //       createTrackingDto,
+        //       users,
+        //       driver_company,
+        //       ['EMAIL', 'PUSH'],
+        //     );
+        //     break;
 
-          case SubscriptionPlan.FREE_TRIAL:
-            await this.sendNotifications(
-              createTrackingDto,
-              users,
-              driver_company,
-              ['PUSH'],
-            );
-            break;
-        }
+        //   case SubscriptionPlan.FREE_TRIAL:
+        //     await this.sendNotifications(
+        //       createTrackingDto,
+        //       users,
+        //       driver_company,
+        //       ['PUSH'],
+        //     );
+        //     break;
+        // }
 
         // send notifications to the sender, send notification to the receiver
       }

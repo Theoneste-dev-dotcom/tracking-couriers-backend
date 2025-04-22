@@ -17,6 +17,8 @@ import { Shipment } from '../shipments/entities/shipment.entity';
 import { User } from '../users/entities/user.entity';
 import { AssignOwner } from '../users/dto/assign-owner.dto';
 import { Role } from 'src/common/enums/role.enum';
+import { CompanyOwner } from '../users/entities/company_owner.entity';
+import { UserService } from '../users/users.service';
 
 @Injectable()
 export class CompaniesService {
@@ -26,7 +28,13 @@ export class CompaniesService {
 
     //injecting the user repository
     @InjectRepository(User)
-    private readonly userRepository: Repository<User>
+    private readonly userRepository: Repository<User>,
+
+    @InjectRepository(CompanyOwner)
+    private readonly companyOwnerRepository: Repository<CompanyOwner>,
+
+    private readonly userService: UserService
+
   ) {}
 
   async create(
@@ -49,7 +57,7 @@ export class CompaniesService {
 
  
     const company = await  this.companyRepository.save(company1);
-    await this.assignCompanyOwner(company.id, current_user.sub)
+    await this.assignCompanyOwner(company.id, current_user.email)
    return company
   }
 
@@ -109,34 +117,36 @@ export class CompaniesService {
     }
   }
 
-  async assignCompanyOwner(companyId:number, userId:number) : Promise<void> {
+  async assignCompanyOwner(companyId:number, userEmail:string) : Promise<void> {
     const company = await this.companyRepository.findOne({where: {id:companyId}});
     if(!company) {
       throw new NotFoundException(`Company with ID ${companyId} not found`);
     }
 
     // verify user exists and is a company owner
-    const user = await this.userRepository.findOne({where: {id:userId,role: Role.COMPANY_OWNER}, 
-    relations: ['ownedCompany']});
+    const user = await this.userRepository.findOne({where: {email: userEmail}})
 
     if(!user) {
-      throw new NotFoundException(`User with ID ${userId} not found or is not a company owner`);
+      throw new NotFoundException(`User with ID ${userEmail} not found or is not a company owner`);
     }
 
-    if(user.ownedCompany) {
-      throw new ConflictException(`User already owns company ID ${user.ownedCompany.id}`);
-    }
+    // if(user.ownedCompany) {
+    //   throw new ConflictException(`User already owns company ID ${user.ownedCompany.id}`);
+    // }
 
     if(company.owner) {
       throw new ConflictException(`Company already has an owner ${company.owner.id}` );
 
     }
+   
+
+   const company_owner = await this.userService.createCompanyOwner(user, companyId)
 
     await this.companyRepository.manager.transaction(
       async (transactionalEntityManager) => {
-        company.owner = user;
+        company.owner = company_owner;
         await transactionalEntityManager.save(company);
-        user.ownedCompany = company;
+        // user.ownedCompany = company;
         await transactionalEntityManager.save(user);
       }
     )
@@ -231,39 +241,39 @@ export class CompaniesService {
     return company.shipments; // Return the shipments associated with the company
   }
 
-  async getCompanyUsers(companyId: number): Promise<User[]> {
-      const company = await this.companyRepository.findOne({
-        where: { id: companyId },
-        relations: [
-          'owner',        // Company owner (OneToOne)
-          'drivers',      // List of drivers (OneToMany)
-          'officers',     // List of officers (OneToMany)
-          'clients'       // List of clients (ManyToMany)
-        ],
-      });
+//   async getCompanyUsers(companyId: number): Promise<User[]> {
+//       const company = await this.companyRepository.findOne({
+//         where: { id: companyId },
+//         relations: [
+//           'owner',        // Company owner (OneToOne)
+//           'drivers',      // List of drivers (OneToMany)
+//           'officers',     // List of officers (OneToMany)
+//           'clients'       // List of clients (ManyToMany)
+//         ],
+//       });
     
-      if (!company) {
-        throw new NotFoundException(`Company with ID ${companyId} not found`);
-      }
+//       if (!company) {
+//         throw new NotFoundException(`Company with ID ${companyId} not found`);
+//       }
     
-      // Combine all user types and filter duplicates
-      const allUsers = [
-        company.owner,      // Owner is a single user
-        ...(company.drivers ?? []), 
-        ...(company.officers ?? []),
-        ...(company.clients ?? [])
-      ].filter(Boolean);    // Remove undefined/null values
+//       // Combine all user types and filter duplicates
+//       const allUsers = [
+//         company.owner,      // Owner is a single user
+//         ...(company.drivers ?? []), 
+//         ...(company.officers ?? []),
+//         ...(company.clients ?? [])
+//       ].filter(Boolean);    // Remove undefined/null values
     
-      // Remove duplicate users based on ID
-      const uniqueUsers = allUsers.reduce((acc: User[], current: User) => {
-        if (!acc.some(user => user.id === current.id)) {
-          acc.push(current);
-        }
-        return acc;
-      }, []);
+//       // Remove duplicate users based on ID
+//       const uniqueUsers = allUsers.reduce((acc: User[], current: User) => {
+//         if (!acc.some(user => user.id === current.id)) {
+//           acc.push(current);
+//         }
+//         return acc;
+//       }, []);
     
-      return uniqueUsers;
-    }
+//       return uniqueUsers;
+//     }
 
 }
 

@@ -27,31 +27,31 @@ export class CompaniesController {
 
 
   // assigning owner to the company with teh company id and the owner path body {userId}
-  @Put(':id/owner')
-  @UseGuards(AuthGuard,RolesGuard)
-  @Roles(Role.ADMIN, Role.COMPANY_OWNER)
-  async assignOwner(
-    @Param('id') id: number,
-    @Body() assignOwnerDto: AssignOwner, @Request() req) {
-      try {
-        await this.companiesService.assignCompanyOwner( id, assignOwnerDto.userId);
+  // @Put(':id/owner')
+  // @UseGuards(AuthGuard,RolesGuard)
+  // @Roles(Role.ADMIN, Role.COMPANY_OWNER)
+  // async assignOwner(
+  //   @Param('id') id: number,
+  //   @Body() assignOwnerDto: AssignOwner, @Request() req) {
+  //     try {
+  //       await this.companiesService.assignCompanyOwner( id, assignOwnerDto.userId);
 
-               return {
-                status: 'success',
-                message: 'Owner assigned successfully',
-               }
-      }catch(error) {
-        switch (error.constructor) {
-          case NotFoundException:
-            throw new NotFoundException(error.message);
-          case ConflictException:
-            throw new ConflictException(error.message);
-          default:
-            throw error;
-        }
-      }
+  //              return {
+  //               status: 'success',
+  //               message: 'Owner assigned successfully',
+  //              }
+  //     }catch(error) {
+  //       switch (error.constructor) {
+  //         case NotFoundException:
+  //           throw new NotFoundException(error.message);
+  //         case ConflictException:
+  //           throw new ConflictException(error.message);
+  //         default:
+  //           throw error;
+  //       }
+  //     }
     
-  }
+  // }
 
 
 
@@ -65,10 +65,10 @@ export class CompaniesController {
     return this.companiesService.findOne(id);
   }
 
-  @Get(":id/users")
-  async findCompanyUsers(@Param('id')  id:number) {
-    return this.companiesService.getCompanyUsers(id);
-  }
+  // @Get(":id/users")
+  // async findCompanyUsers(@Param('id')  id:number) {
+  //   return this.companiesService.getCompanyUsers(id);
+  // }
 
 
   @Get(':id/subscription-status')

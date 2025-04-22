@@ -7,6 +7,8 @@ import { AuthModule } from '../auth/auth.module';
 import { User } from '../users/entities/user.entity';
 import { Branch } from 'src/branches/entities/branch.entity';
 import { BranchesModule } from 'src/branches/branches.module';
+import { CompanyOwner } from '../users/entities/company_owner.entity';
+import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
@@ -14,9 +16,12 @@ import { BranchesModule } from 'src/branches/branches.module';
   TypeOrmModule.forFeature([Company]),
   TypeOrmModule.forFeature([User]),
   TypeOrmModule.forFeature([Branch]),
+  TypeOrmModule.forFeature([CompanyOwner]),
   forwardRef(() => AuthModule),
-  forwardRef(()=> BranchesModule)
-  
+  forwardRef(()=> BranchesModule),
+  forwardRef(()=> UsersModule),
+ 
+
 ],
   controllers: [CompaniesController],
   providers: [CompaniesService],

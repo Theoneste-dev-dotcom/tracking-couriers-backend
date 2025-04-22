@@ -10,6 +10,9 @@ import {
   Request,
   Put,
   Query,
+  UseInterceptors,
+  UploadedFile,
+  NotFoundException,
 } from '@nestjs/common';
 import { UserService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -24,6 +27,8 @@ import { Role } from 'src/common/enums/role.enum';
 import { UserResponseDto } from './dto/user-reponse.dto';
 import { User } from './entities/user.entity';
 import { AssignRoleDto } from './dto/assing-role.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { multerConfig } from 'src/config/multer.config';
 
 @Controller('users')
 export class UsersController {
@@ -36,37 +41,52 @@ export class UsersController {
     @Query('companyId') companyId?: number,
     @Query('currentId') currentId?: number,
   ) {
-   
+    
     if (currentId) {
       const currentUser = await this.usersService.findOneById(currentId);
-      
       return this.usersService.createUser(
         createUserDto,
         currentUser,
         companyId,
       );
     }
-    return   await this.usersService.createUser(createUserDto, req.user, companyId);
-   
+    return await this.usersService.createUser(
+      createUserDto,
+      req.user,
+      companyId,
+    );
   }
 
   @UseGuards(AuthGuard)
   @Roles(Role.ADMIN)
-  @Get("all")
+  @Get('all')
   async findAllByRoleAndCompanyId(
     @Query('companyId') companyId: string,
     @Query('role') role: Role,
   ) {
-    console.log(companyId, role)
-    const users = await this.usersService.findAllByTypeAndCompany(role, companyId);
-    return  users.map((user) => this.mapToDto(user));
+    return await this.usersService.findAllByTypeAndCompany(role, +companyId);
+    // return  users.map((user) => this.mapToDto(user));
   }
-  
 
   @Get()
   @UseGuards(AuthGuard)
   async JustGetAll() {
     return this.usersService.findAll();
+  }
+
+  // get profile image
+  @Get('profile/image')
+  @UseGuards(AuthGuard)
+  async getProfileImage(
+    @Request() req,
+  ) {
+    const filename = await this.usersService.getProfileImage(req.user.sub);
+    if (!filename) {
+      throw new NotFoundException('Profile image not found');
+    }
+    return {
+      imageUrl: `http://localhost:3001/uploads/profilepics/${filename}`,
+    }
   }
 
   @UseGuards(AuthGuard)
@@ -75,54 +95,49 @@ export class UsersController {
     return this.usersService.findByEmail(email);
   }
 
-
   @UseGuards(AuthGuard)
   @Get('user-company/company')
   async getUserCompanies(@Request() req) {
-    return this.usersService.getAssociatedCompany(req.user.sub);
+    console.log(req.user, "the request user")
+    return this.usersService.getAssociatedCompany(req.user.sub, req.user.role);
   }
-  
+
   @UseGuards(AuthGuard)
   @Get('/specific/:id')
   async findOne(@Param('id') id: number) {
-    const user = await this.usersService.findOneById(id);
-    return  this.mapToDto(user);
+    return await this.usersService.findOneById(id);
+    // return  this.mapToDto(user);
   }
 
   @UseGuards(AuthGuard)
   @Put(':id')
+  @UseInterceptors(FileInterceptor('profilePic', multerConfig))
   async update(
     @Param('id') id: number,
     @Body() updateUserDto: AdminUpdateUserDto | DriverUpdateUserDto,
     @Request() req,
-    @Query('currentId') currentId?:number
+    @UploadedFile() file: Express.Multer.File,
   ) {
-    if(currentId) {
-      const currentUser = await this.usersService.findUser(currentId);
-      return this.usersService.update(id, updateUserDto, currentUser);
-    }
-    return this.usersService.update(id, updateUserDto, req.user);
+    const currentUser = await this.usersService.findUser(req.user.sub);
+    return this.usersService.updateUser(id, updateUserDto, currentUser, file);
   }
 
+  // @UseGuards(AuthGuard)
+  // @Roles(Role.ADMIN, Role.CLIENT, Role.COMPANY_OWNER)
+  // @Delete(':id')
+  // remove(@Param('id') id: number) {
+  //   return this.usersService.remove(id);
+  // }
 
-
-  @UseGuards(AuthGuard)
-  @Roles(Role.ADMIN, Role.CLIENT, Role.COMPANY_OWNER)
-  @Delete(':id')
-  remove(@Param('id') id: number) {
-    return this.usersService.remove(id);
-  }
-
-
-  @Post(':id/assign-role')
-  @Roles(Role.ADMIN)
-  async assignRole(
-    @Param('id') id: number,
-    @Body('role') assignRoleDto: AssignRoleDto
-  ): Promise<UserResponseDto> {
-    const user = await this.usersService.assignRole(id, assignRoleDto);
-    return this.mapToDto(user);
-  }
+  // @Post(':id/assign-role')
+  // @Roles(Role.ADMIN)
+  // async assignRole(
+  //   @Param('id') id: number,
+  //   @Body('role') assignRoleDto: AssignRoleDto
+  // ): Promise<UserResponseDto> {
+  //   const user = await this.usersService.assignRole(id, assignRoleDto);
+  //   return this.mapToDto(user);
+  // }
   // @Get(':id/companies')
   // getCompaniesById(@Param('id') id: number) {
   //   return this.usersService.getUserCompanies(Number(id));
@@ -141,24 +156,23 @@ export class UsersController {
   //   return this.usersService.disJoinCompany(userid, companyId);
   // }
 
+  //   private mapToDto(user: User): UserResponseDto {
+  //     const dto = new UserResponseDto(user.id, user.name, user.email, user.role, user.phone);
+  //     switch (user.role) {
+  //       case Role.DRIVER:
+  //         dto.companyId = user.driverInCompany?.id;
+  //         break;
+  //       case Role.OFFICER:
+  //         dto.companyId = user.officerInCompany?.id;
+  //         break;
+  //       case Role.CLIENT:
+  //         dto.companyIds = user.clientOfCompanies?.map(c => c.id);
+  //         break;
+  //       case Role.COMPANY_OWNER:
+  //         dto.ownedCompanyId = user.ownedCompany?.id;
+  //         break;
+  //     }
 
-  private mapToDto(user: User): UserResponseDto {
-    const dto = new UserResponseDto(user.id, user.name, user.email, user.role, user.phone);
-    switch (user.role) {
-      case Role.DRIVER:
-        dto.companyId = user.driverInCompany?.id;
-        break;
-      case Role.OFFICER:
-        dto.companyId = user.officerInCompany?.id;
-        break;
-      case Role.CLIENT:
-        dto.companyIds = user.clientOfCompanies?.map(c => c.id);
-        break;
-      case Role.COMPANY_OWNER:
-        dto.ownedCompanyId = user.ownedCompany?.id;
-        break;
-    }
-
-    return dto;
-  }
+  //     return dto;
+  //   }
 }

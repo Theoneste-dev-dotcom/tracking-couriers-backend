@@ -1,8 +1,12 @@
   import { Branch } from 'src/branches/entities/branch.entity';
 import { SubscriptionPlan } from 'src/common/enums/subscription-plan.enum';
   import { Shipment } from 'src/modules/shipments/entities/shipment.entity';
-  import { User } from 'src/modules/users/entities/user.entity';
-  import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany, ManyToMany, OneToOne } from 'typeorm';
+import { Admin } from 'src/modules/users/entities/admins.entity';
+import { Client } from 'src/modules/users/entities/client.entity';
+import { CompanyOwner } from 'src/modules/users/entities/company_owner.entity';
+import { Driver } from 'src/modules/users/entities/driver.entity';
+import { Officer } from 'src/modules/users/entities/officers.entity';
+  import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany, ManyToMany, OneToOne, JoinTable } from 'typeorm';
 
   @Entity('companies')
   export class Company {
@@ -31,23 +35,24 @@ import { SubscriptionPlan } from 'src/common/enums/subscription-plan.enum';
     @Column({ type: 'timestamp', nullable: true })
     subscriptionExpiry: Date | null;
     
-    @ManyToMany(()=> User, (user)=> user.clientOfCompanies)
-    clients:User[];
+    @ManyToMany(()=> Client, (client)=> client.clientOfCompanies)
+    clients:Client[];
 
-    @OneToMany(()=> User, (user)=> user.driverInCompany)
-    drivers?:User[];
+    @OneToMany(()=> Driver, (driver)=> driver.driverInCompany)
+    @JoinTable()
+    drivers?:Driver[];
 
-    @OneToMany(()=>User, (officer)=> officer.officerInCompany)
-    officers?:User[];
+    @OneToMany(()=>Officer, (officer)=> officer.officerInCompany)
+    officers?:Officer[];
 
-    @OneToOne(()=> User, (owner)=> owner.ownedCompany)
-    owner:User;
+    @OneToOne(()=> CompanyOwner, (owner)=> owner.ownedCompany)
+    owner:CompanyOwner;
 
     @OneToMany(() => Shipment, (shipment) => shipment.company)
     shipments: Shipment[]; 
 
-    @OneToOne(()=> User, (admin)=> admin.adminInCompany)
-    admin:User;
+    @OneToOne(()=> Admin, (admin)=> admin.adminInCompany)
+    admin:Admin;
 
 
     @OneToMany(()=> Branch, (branch)=> branch.company)
