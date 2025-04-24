@@ -38,10 +38,11 @@ import { Admin } from './entities/admins.entity';
 import { switchAll } from 'rxjs';
 import * as fs from 'fs';
 import { join } from 'path';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NotificationEvent } from 'src/common/enums/notification-events.enum';
 
 @Injectable()
 export class UserService {
-
   constructor(
     @InjectRepository(User)
     private user_repo: Repository<User>,
@@ -65,6 +66,8 @@ export class UserService {
     private company_repo: Repository<Company>,
 
     private subscriptionService: SubscriptionService,
+
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async createUser(
@@ -135,10 +138,10 @@ export class UserService {
   private async createAdminUser(
     userData: User,
     currentUser: any,
-    companyId
+    companyId,
   ): Promise<SignupResponseDto> {
     const company = await this.validateCompanyExists(companyId);
-        if (!company) {
+    if (!company) {
       throw new ForbiddenException(
         'Only company owners can create admin users',
       );
@@ -149,8 +152,17 @@ export class UserService {
     });
     admin.user = userData;
 
-    await this.user_repo.save(userData);
+    const newUser = await this.user_repo.save(userData);
     await this.admin_repo.save(admin);
+
+    this.eventEmitter.emit(NotificationEvent.USER_CREATED, {
+      userId: newUser.id,
+      role: newUser.role,
+      companyId,
+      createdBy: currentUser?.id || 'system',
+      timestamp: new Date(),
+    });
+    this.eventEmitter.emit('user.created', userData.id);
 
     return this.buildSignupResponse('Admin created successfully', admin);
   }
@@ -194,6 +206,7 @@ export class UserService {
     await this.user_repo.save(userData);
     await this.driver_repo.save(driver);
 
+    this.eventEmitter.emit('user.created', userData.id);
     return this.buildSignupResponse('Driver created successfully', driver);
   }
 
@@ -218,6 +231,7 @@ export class UserService {
 
     await this.user_repo.save(userData);
     await this.officer_repo.save(officer);
+    this.eventEmitter.emit('user.created', userData.id);
 
     return this.buildSignupResponse('Officer created successfully', officer);
   }
@@ -236,8 +250,9 @@ export class UserService {
   private async createNormalUser(
     userData: CreateUserDto,
   ): Promise<SignupResponseDto> {
-    const user = await this.user_repo.save(userData);
-    return this.buildSignupResponse('User created successfully', user);
+    const newUser = await this.user_repo.save(userData);
+    // Emit event after successful creation
+    return this.buildSignupResponse('User created successfully', newUser);
   }
 
   private async validateUserCanCreateDriver(
@@ -287,7 +302,7 @@ export class UserService {
   }
 
   //find the company users based on the role admins
-  async findAllByTypeAndCompany(role: Role, companyId: number){
+  async findAllByTypeAndCompany(role: Role, companyId: number) {
     const company = this.company_repo.findOne({ where: { id: companyId } });
     if (companyId) {
       switch (role) {
@@ -296,19 +311,19 @@ export class UserService {
             await this.driver_repo.find({
               relations: ['user', 'driverInCompany'],
             })
-          ).filter((user) => (user.driverInCompany.id == companyId));
+          ).filter((user) => user.driverInCompany.id == companyId);
         case Role.OFFICER:
           return (
             await this.officer_repo.find({
               relations: ['user', 'officerInCompany'],
             })
-          ).filter((user) => (user.officerInCompany.id == companyId));
+          ).filter((user) => user.officerInCompany.id == companyId);
         case Role.ADMIN:
           return (
             await this.admin_repo.find({
               relations: ['user', 'adminInCompany'],
             })
-          ).filter((user) => (user.adminInCompany.id == companyId));
+          ).filter((user) => user.adminInCompany.id == companyId);
         case Role.CLIENT:
           return await this.admin_repo.find({
             relations: ['user', 'clientOfCompanies'],
@@ -321,7 +336,6 @@ export class UserService {
     const users: User[] = await this.user_repo.find();
     return users;
   }
-
 
   async findOneById(id: number): Promise<User> {
     const user = await this.user_repo.findOne({ where: { id } });
@@ -355,7 +369,7 @@ export class UserService {
         const owners = await this.company_owner_repo.find({
           relations: ['ownedCompany', 'user'],
         });
-        console.log(owners)
+        console.log(owners);
         const owner = owners.find((own) => own.user.id == currentUserId);
         if (!owner) {
           return 'error getting owner';
@@ -363,9 +377,11 @@ export class UserService {
         return owner.ownedCompany;
       case Role.OFFICER:
         const officers = this.officer_repo.find({
-          relations: ['officerInCompany','user'],
+          relations: ['officerInCompany', 'user'],
         });
-        const officer = (await officers).find((of) => of.user.id == currentUserId);
+        const officer = (await officers).find(
+          (of) => of.user.id == currentUserId,
+        );
         if (!officer) {
           return 'failed getting officer';
         }
@@ -384,7 +400,7 @@ export class UserService {
         const admins = await this.admin_repo.find({
           relations: ['adminInCompany', 'user'],
         });
-        
+
         const admin = admins.find((ad) => ad.user.id == currentUserId);
         if (!admin) {
           return 'failed getting admin';
@@ -414,9 +430,9 @@ export class UserService {
     } catch (error) {
       throw new InternalServerErrorException('Failed to update refresh token');
     }
-  } 
-  
-  async getProfileImage(id:number) {
+  }
+
+  async getProfileImage(id: number) {
     const user = await this.user_repo.findOne({ where: { id } });
     if (!user) {
       throw new NotFoundException('User not found why');
@@ -424,7 +440,39 @@ export class UserService {
     return user.profilePic;
   }
 
+  async getUserCompany(id: number) {
+    const user = await this.user_repo.findOne({where: { id }});
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    switch (user.role) {
+      case Role.COMPANY_OWNER:
+        const owner = await this.company_owner_repo.findOne({
+          where: { user: { id } },
+          relations: ['ownedCompany'],
+        });
+        return owner?.ownedCompany;
+      case Role.ADMIN:
+        const admin = await this.admin_repo.findOne({
+          where: { user: { id } },
+          relations: ['adminInCompany'],
+        });
+        return admin?.adminInCompany
+      case Role.DRIVER:
+        const driver = await this.driver_repo.findOne({
+          where: { user: { id } },
+          relations: ['driverInCompany'],
+        });
+        return driver?.driverInCompany
+      case Role.OFFICER:
+        const officer = await this.officer_repo.findOne({
+          where: { user: { id } },
+          relations: ['officerInCompany'],
+        });
+        return officer?.officerInCompany
 
+    }
+  }
 
   async updateUser(
     id: number,
@@ -445,20 +493,26 @@ export class UserService {
     user.name = updateUserDto.name ?? user.name;
     user.phone = updateUserDto.phone ?? user.phone;
     user.role = updateUserDto.role ?? user.role;
-     // Handle profile picture update
-  if (file) {
-    // Delete old profile picture if exists
-    if (user.profilePic) {
-      try {
-        const oldImagePath = join('uploads', 'profilepics', user.profilePic);
-        console.log(oldImagePath, file.filename);
-        await fs.promises.unlink(oldImagePath);
-      } catch (err) {
-        console.error(`Failed to delete old profile image: ${err.message}`);
+    // Handle profile picture update
+    if (file) {
+      // Delete old profile picture if exists
+      if (user.profilePic) {
+        try {
+          const oldImagePath = join('uploads', 'profilepics', user.profilePic);
+          console.log(oldImagePath, file.filename);
+          await fs.promises.unlink(oldImagePath);
+        } catch (err) {
+          console.error(`Failed to delete old profile image: ${err.message}`);
+        }
       }
+      user.profilePic = file.filename;
     }
-    user.profilePic = file.filename;
-  }
+
+    if(user.role in ['admin', 'company_owner', 'officer']){
+      this.eventEmitter.emit('user.updated', user.id);
+    }
+
+    // Emit update event
     return await this.user_repo.save(user);
   }
 
@@ -476,17 +530,64 @@ export class UserService {
     driver.vehicleId = updateDto.vehicleId ?? driver.vehicleId;
     await this.driver_repo.save(driver);
 
-    user.about = updateDto.about ?? user.about;
-    user.address = updateDto.address ?? user.address;
-    user.email = updateDto.email ?? user.email;
-    user.name = updateDto.name ?? user.name;
-    user.phone = updateDto.phone ?? user.phone;
-    user.role = updateDto.role ?? user.role;
-    user.profilePic = file?.filename ?? user.profilePic;
-  
+    if (user.role !== updateDto.role) {
+      user.about = updateDto.about ?? user.about;
+      user.address = updateDto.address ?? user.address;
+      user.email = updateDto.email ?? user.email;
+      user.name = updateDto.name ?? user.name;
+      user.phone = updateDto.phone ?? user.phone;
+      user.role = updateDto.role ?? user.role;
+      user.profilePic = file?.filename ?? user.profilePic;
 
+      this.eventEmitter.emit('user.updated', user.id);
+    }
     return await this.user_repo.save(user);
   }
+
+
+  
+  // must be updated for better handling
+  private getNotificationRecipients(companyId: number, roles: Role[]): Promise<User[]> {
+    return this.user_repo.find({
+      where: {
+        role: In(roles),
+        ...(companyId && {
+          adminInCompany: { id: companyId },
+          driverInCompany: { id: companyId },
+          officerInCompany: { id: companyId }
+        })
+      }
+    });
+  }
+
+ 
+async getCompanyMembers(companyId: number, roles: Role[]) {
+  const members = await Promise.all(
+    roles.map(async role => {
+      return this.findAllByTypeAndCompany(role, companyId);
+    })
+  );
+  
+  return members.flat().map(member => member?.user);
+}
+
+  //   // Emit before deletion
+  // async deleteUser(id: number) {
+  //   const user = await this.findOneById(id);
+    
+  //   // Emit before deletion
+  //   this.eventEmitter.emit(NotificationEvent.USER_DELETED, {
+  //     userId: id,
+  //     role: user.role,
+  //     companyId: await this.getUserCompanyId(id),
+  //     deletedBy: currentUser?.id || 'system'
+  //   });
+  
+  //   await this.user_repo.remove(user);
+    
+  //   // Cleanup notifications
+  //   await this.notificationRepository.delete({ userId: id });
+  // }
 
   //   // ========== Comprehensive Delete Methods ==========
 

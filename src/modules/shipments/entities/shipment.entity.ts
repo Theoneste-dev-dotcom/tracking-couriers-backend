@@ -54,7 +54,7 @@ export class Shipment {
 
   @ManyToOne(() => Company, (company) => company.shipments)
   @JoinColumn({ name: 'company_id' })
-  company: Company;
+  company?: Company;
 
   @Column()
   status: string;

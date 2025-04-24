@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { OnGatewayConnection, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
+import { OnGatewayConnection, OnGatewayDisconnect, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
 import { Server, Socket } from "socket.io";
 
 @Injectable()
@@ -8,7 +8,7 @@ import { Server, Socket } from "socket.io";
         origin: '*'
     }
 })
-export class NotificationGateway implements OnGatewayConnection, OnGatewayConnection {
+export class NotificationGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer()
     server: Server;
 

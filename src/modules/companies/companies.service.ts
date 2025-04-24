@@ -22,6 +22,7 @@ import { UserService } from '../users/users.service';
 
 @Injectable()
 export class CompaniesService {
+ 
   constructor(
     @InjectRepository(Company)
     private readonly companyRepository: Repository<Company>,
@@ -61,6 +62,13 @@ export class CompaniesService {
    return company
   }
 
+
+  getUserCompany(sub: any) {
+    return this.companyRepository.findOne({
+      where: { id: sub.companyId },
+      relations: ['owner', 'drivers', 'officers', 'clients'],
+    });
+  }
   async findAll(): Promise<CompanyResponseDto[]> {
     return this.companyRepository.find();
   }

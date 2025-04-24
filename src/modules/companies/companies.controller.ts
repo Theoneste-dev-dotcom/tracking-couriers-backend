@@ -81,6 +81,7 @@ export class CompaniesController {
     return this.companiesService.getShipmentsByCompanyId(id);
   }
 
+ 
   @UseGuards(AuthGuard)
   @Put(':id')
   update(@Param('id') id: number, @Body() updateCompanyDto: UpdateCompanyDto) {
@@ -93,4 +94,6 @@ export class CompaniesController {
   remove(@Param('id') id: number) {
     return this.companiesService.remove(id);
   }
+
+
 }

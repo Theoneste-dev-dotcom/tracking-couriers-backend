@@ -74,6 +74,13 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
+   //get user company
+    @Get('user-company')
+    @UseGuards(AuthGuard)
+    async getUserCompany(@Request() req) {
+      return this.usersService.getUserCompany(req.user.sub);
+    }
+
   // get profile image
   @Get('profile/image')
   @UseGuards(AuthGuard)

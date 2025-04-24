@@ -6,7 +6,7 @@ import { CreateTrackingDto } from './dto/create-tracking.dto';
 import { UpdateTrackingDto } from './dto/update-tracking.dto';
 import { User } from '../users/entities/user.entity';
 import { Company } from '../companies/entities/company.entity';
-import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationService } from '../notifications/notifications.service';
 import { NotificationType } from 'src/common/enums/notitication-type.enum';
 import { UserService } from '../users/users.service';
 import { SubscriptionPlan } from 'src/common/enums/subscription-plan.enum';
@@ -20,7 +20,7 @@ export class TrackingService {
     @InjectRepository(ShipmentUpdate)
     private readonly trackingRepository: Repository<ShipmentUpdate>,
 
-    private notificationsService: NotificationsService,
+    private notificationsService: NotificationService,
     private userService: UserService,
     private shipmentService: ShipmentsService,
   ) {}
@@ -162,7 +162,7 @@ export class TrackingService {
           await this.notificationsService.sendNotificationToPhone(notification);
         }
         if (notificationTypes.includes('PUSH')) {
-          await this.notificationsService.sendNotification(notification);
+          // await this.notificationsService.sendNotification(notification);
         }
       } else {
         if (shipmentDto.shipmentId) {
@@ -189,7 +189,7 @@ export class TrackingService {
             );
           }
           if (notificationTypes.includes('PUSH')) {
-            await this.notificationsService.sendNotification(notification);
+            // await this.notificationsService.sendNotification(notification);
           }
         }
       }

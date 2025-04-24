@@ -9,10 +9,6 @@ export class Notification {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(()=> User)
-  @JoinColumn({name: 'user_id'})
-  user: User
-
   @ManyToOne(()=> Company) 
   @JoinColumn({name: 'company_id'})
   company: Company
@@ -25,9 +21,6 @@ export class Notification {
 
   @Column({ default: false })
   seen: boolean;
-
-  @Column({nullable: true})
-  relatedShipmentId?:number;
 
   @CreateDateColumn()
   createdAt:Date;

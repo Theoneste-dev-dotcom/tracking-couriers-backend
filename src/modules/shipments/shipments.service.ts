@@ -9,7 +9,7 @@ import { CompaniesService } from '../companies/companies.service';
 import { Role } from 'src/common/enums/role.enum';
 import { User } from '../users/entities/user.entity';
 import { Company } from '../companies/entities/company.entity';
-import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationService } from '../notifications/notifications.service';
 import { SubscriptionPlan } from 'src/common/enums/subscription-plan.enum';
 import { NotificationType } from 'src/common/enums/notitication-type.enum';
 import moment from 'moment';
@@ -23,7 +23,7 @@ export class ShipmentsService {
 
     private readonly userService: UserService,
     private readonly companyService: CompaniesService,
-    private readonly notificationsService: NotificationsService,
+    private readonly notificationsService: NotificationService,
   ) {}
 
   // this acan be created by admin, officer,
@@ -201,7 +201,7 @@ export class ShipmentsService {
     }
     // send push notification
     if (notificationTypes.includes('PUSH')) {
-      await this.notificationsService.sendNotification(notification);
+      // await this.notificationsService.sendNotification(notification);
     }
   }
 

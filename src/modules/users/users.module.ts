@@ -12,6 +12,7 @@ import { Driver } from './entities/driver.entity';
 import { Officer } from './entities/officers.entity';
 import { CompanyOwner } from './entities/company_owner.entity';
 import { Client } from './entities/client.entity';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports:[forwardRef(()=> AuthModule), 
@@ -24,6 +25,7 @@ import { Client } from './entities/client.entity';
     TypeOrmModule.forFeature([Company]),
     forwardRef(()=>CompaniesModule),
     forwardRef(()=>SubscriptionModule),
+    EventEmitterModule.forRoot()
   ],
   controllers: [UsersController],
   providers: [UserService],
