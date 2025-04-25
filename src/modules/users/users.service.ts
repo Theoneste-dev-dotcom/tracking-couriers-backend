@@ -115,7 +115,6 @@ export class UserService {
       throw new ConflictException('User already exists');
     }
 
-    // Validate role-based permissions
     if (
       createUserDto.role === Role.ADMIN &&
       (!currentUser || currentUser.role !== Role.COMPANY_OWNER)
@@ -141,6 +140,7 @@ export class UserService {
     companyId,
   ): Promise<SignupResponseDto> {
     const company = await this.validateCompanyExists(companyId);
+    //log("the company is ", company , " and the company id is ", companyId, " with current user ", currentUser);
     if (!company) {
       throw new ForbiddenException(
         'Only company owners can create admin users',
@@ -328,6 +328,14 @@ export class UserService {
           return await this.admin_repo.find({
             relations: ['user', 'clientOfCompanies'],
           });
+        case Role.COMPANY_OWNER:
+          return (
+            await this.company_owner_repo.find({
+              relations: ['user', 'ownedCompany'],
+            })
+          ).filter((user) => user.ownedCompany.id == companyId);
+        default:
+          throw new BadRequestException('Invalid role provided');
       }
     }
   }
@@ -369,7 +377,7 @@ export class UserService {
         const owners = await this.company_owner_repo.find({
           relations: ['ownedCompany', 'user'],
         });
-        console.log(owners);
+
         const owner = owners.find((own) => own.user.id == currentUserId);
         if (!owner) {
           return 'error getting owner';
@@ -441,7 +449,7 @@ export class UserService {
   }
 
   async getUserCompany(id: number) {
-    const user = await this.user_repo.findOne({where: { id }});
+    const user = await this.user_repo.findOne({ where: { id } });
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -457,20 +465,19 @@ export class UserService {
           where: { user: { id } },
           relations: ['adminInCompany'],
         });
-        return admin?.adminInCompany
+        return admin?.adminInCompany;
       case Role.DRIVER:
         const driver = await this.driver_repo.findOne({
           where: { user: { id } },
           relations: ['driverInCompany'],
         });
-        return driver?.driverInCompany
+        return driver?.driverInCompany;
       case Role.OFFICER:
         const officer = await this.officer_repo.findOne({
           where: { user: { id } },
           relations: ['officerInCompany'],
         });
-        return officer?.officerInCompany
-
+        return officer?.officerInCompany;
     }
   }
 
@@ -499,7 +506,7 @@ export class UserService {
       if (user.profilePic) {
         try {
           const oldImagePath = join('uploads', 'profilepics', user.profilePic);
-          console.log(oldImagePath, file.filename);
+
           await fs.promises.unlink(oldImagePath);
         } catch (err) {
           console.error(`Failed to delete old profile image: ${err.message}`);
@@ -508,7 +515,7 @@ export class UserService {
       user.profilePic = file.filename;
     }
 
-    if(user.role in ['admin', 'company_owner', 'officer']){
+    if (user.role in ['admin', 'company_owner', 'officer']) {
       this.eventEmitter.emit('user.updated', user.id);
     }
 
@@ -544,220 +551,32 @@ export class UserService {
     return await this.user_repo.save(user);
   }
 
-
-  
   // must be updated for better handling
-  private getNotificationRecipients(companyId: number, roles: Role[]): Promise<User[]> {
+  private getNotificationRecipients(
+    companyId: number,
+    roles: Role[],
+  ): Promise<User[]> {
     return this.user_repo.find({
       where: {
         role: In(roles),
         ...(companyId && {
           adminInCompany: { id: companyId },
           driverInCompany: { id: companyId },
-          officerInCompany: { id: companyId }
-        })
-      }
+          officerInCompany: { id: companyId },
+        }),
+      },
     });
   }
 
- 
-async getCompanyMembers(companyId: number, roles: Role[]) {
-  const members = await Promise.all(
-    roles.map(async role => {
-      return this.findAllByTypeAndCompany(role, companyId);
-    })
-  );
-  
-  return members.flat().map(member => member?.user);
-}
+  async getCompanyMembers(companyId: number, roles: Role[]) {
+    const members = await Promise.all(
+      roles.map(async (role) => {
+        return this.findAllByTypeAndCompany(role, companyId);
+      }),
+    );
 
-  //   // Emit before deletion
-  // async deleteUser(id: number) {
-  //   const user = await this.findOneById(id);
-    
-  //   // Emit before deletion
-  //   this.eventEmitter.emit(NotificationEvent.USER_DELETED, {
-  //     userId: id,
-  //     role: user.role,
-  //     companyId: await this.getUserCompanyId(id),
-  //     deletedBy: currentUser?.id || 'system'
-  //   });
-  
-  //   await this.user_repo.remove(user);
-    
-  //   // Cleanup notifications
-  //   await this.notificationRepository.delete({ userId: id });
-  // }
-
-  //   // ========== Comprehensive Delete Methods ==========
-
-  //   async deleteUser(id: number, currentUser?: User): Promise<void> {
-  //     const user = await this.findUserWithRelations(id);
-
-  //     // Authorization checks
-  //     this.validateDeletionPermissions(user, currentUser);
-
-  //     // Role-specific deletion logic
-  //     switch (user.role) {
-  //       case Role.COMPANY_OWNER:
-  //         await this.deleteCompanyOwner(user);
-  //         break;
-  //       case Role.ADMIN:
-  //         await this.deleteAdmin(user, currentUser);
-  //         break;
-  //       case Role.DRIVER:
-  //         await this.deleteDriver(user, currentUser);
-  //         break;
-  //       case Role.OFFICER:
-  //         await this.deleteOfficer(user, currentUser);
-  //         break;
-  //       case Role.CLIENT:
-  //         await this.deleteClient(user);
-  //         break;
-  //       default:
-  //         await this.deleteNormalUser(user);
-  //     }
-  //   }
-
-  //   private async deleteCompanyOwner(user: User): Promise<void> {
-  //     // First delete the company owned by this user
-  //     const company = await this.companyRepository.findOne({
-  //       where: { owner: { id: user.id } },
-  //       relations: ['drivers', 'officers', 'admins', 'clients']
-  //     });
-
-  //     if (company) {
-  //       // Disassociate all users from the company
-  //       company.drivers = [];
-  //       company.officers = [];
-  //       company.clients = [];
-  //       company.admins = [];
-  //       await this.company_repo.save(company);
-
-  //       // Then delete the company
-  //       await this.company_repo.remove(company);
-  //     }
-
-  //     // Finally delete the owner
-  //     await this.usersRepository.remove(user);
-  //   }
-
-  //   private async deleteAdmin(user: User, currentUser?: User): Promise<void> {
-  //     if (!currentUser || currentUser.role !== Role.COMPANY_OWNER) {
-  //       throw new ForbiddenException('Only company owners can delete admins');
-  //     }
-
-  //     // Verify the admin belongs to the owner's company
-  //     if (user.adminInCompany?.id !== currentUser.ownedCompany?.id) {
-  //       throw new ForbiddenException('Cannot delete admin from another company');
-  //     }
-
-  //     // Remove admin from company
-  //     const company = await this.companyRepository.findOne({
-  //       where: { id: user.adminInCompany.id },
-  //       relations: ['admins']
-  //     });
-
-  //     if (company) {
-  //       company.admins = company.admins.filter(admin => admin.id !== user.id);
-  //       await this.companyRepository.save(company);
-  //     }
-
-  //     await this.usersRepository.remove(user);
-  //   }
-
-  //   private async deleteDriver(user: User, currentUser?: User): Promise<void> {
-  //     // Drivers can delete themselves
-  //     if (currentUser && currentUser.id === user.id) {
-  //       await this.usersRepository.remove(user);
-  //       return;
-  //     }
-
-  //     // Admins/officers can delete drivers in their company
-  //     if (currentUser &&
-  //         [Role.ADMIN, Role.OFFICER].includes(currentUser.role)) {
-  //       // Verify same company
-  //       const currentUserCompany = currentUser.adminInCompany || currentUser.officerInCompany;
-  //       if (user.driverInCompany?.id !== currentUserCompany?.id) {
-  //         throw new ForbiddenException('Cannot delete driver from another company');
-  //       }
-
-  //       // Remove driver from company
-  //       const company = await this.companyRepository.findOne({
-  //         where: { id: user.driverInCompany.id },
-  //         relations: ['drivers']
-  //       });
-
-  //       if (company) {
-  //         company.drivers = company.drivers.filter(driver => driver.id !== user.id);
-  //         await this.companyRepository.save(company);
-  //       }
-
-  //       await this.usersRepository.remove(user);
-  //       return;
-  //     }
-
-  //     throw new ForbiddenException('Unauthorized to delete this driver');
-  //   }
-
-  //   private async deleteOfficer(user: User, currentUser?: User): Promise<void> {
-  //     // Only admins can delete officers
-  //     if (!currentUser || currentUser.role !== Role.ADMIN) {
-  //       throw new ForbiddenException('Only admins can delete officers');
-  //     }
-
-  //     // Verify same company
-  //     if (user.officerInCompany?.id !== currentUser.adminInCompany?.id) {
-  //       throw new ForbiddenException('Cannot delete officer from another company');
-  //     }
-
-  //     // Remove officer from company
-  //     const company = await this.companyRepository.findOne({
-  //       where: { id: user.officerInCompany.id },
-  //       relations: ['officers']
-  //     });
-
-  //     if (company) {
-  //       company.officers = company.officers.filter(officer => officer.id !== user.id);
-  //       await this.companyRepository.save(company);
-  //     }
-
-  //     await this.usersRepository.remove(user);
-  //   }
-
-  //   private async deleteClient(user: User): Promise<void> {
-  //     // Remove client from all companies
-  //     const companies = await this.companyRepository.find({
-  //       where: { clients: { id: user.id } },
-  //       relations: ['clients']
-  //     });
-
-  //     await Promise.all(companies.map(async company => {
-  //       company.clients = company.clients.filter(client => client.id !== user.id);
-  //       await this.companyRepository.save(company);
-  //     }));
-
-  //     await this.usersRepository.remove(user);
-  //   }
-
-  //   private async deleteNormalUser(user: User): Promise<void> {
-  //     await this.usersRepository.remove(user);
-  //   }
-
-  //   // ========== Helper Methods ==========
-
-  //   private async findUserWithRelations(id: number) {
-  //     return this.usersRepository.findOne({
-  //       where: { id },
-  //       relations: [
-  //         'ownedCompany',
-  //         'adminInCompany',
-  //         'driverInCompany',
-  //         'officerInCompany',
-  //         'clientOfCompanies'
-  //       ]
-  //     });
-  //   }
+    return members.flat().map((member) => member?.user);
+  }
 
   private validateUpdatePermissions(user: User, currentUser: User): void {
     //check for updating himself only
@@ -790,6 +609,99 @@ async getCompanyMembers(companyId: number, roles: Role[]) {
         }
         break;
     }
+  }
+
+  async deleteUserById(userId: number, currentUser: User): Promise<string> {
+    const user = await this.user_repo.findOne({
+      where: { id: userId },
+      relations: ['admin', 'driver', 'officer', 'companyOwner'],
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (!currentUser) {
+      throw new UnauthorizedException('You must be logged in to delete a user');
+    }
+
+    switch (user.role) {
+      case Role.ADMIN:
+        return this.deleteAdminUser(userId);
+      case Role.DRIVER:
+        return this.deleteDriverUser(userId);
+      case Role.OFFICER:
+        return this.deleteOfficerUser(userId);
+      case Role.COMPANY_OWNER:
+        return this.deleteCompanyOwner(userId);
+      default:
+        return this.deleteNormalUser(userId);
+    }
+  }
+
+  private async deleteAdminUser(userId: number): Promise<string> {
+    const admin = await this.admin_repo.findOne({
+      where: { user: { id: userId } },
+      relations: ['user'],
+    });
+    if (!admin) throw new NotFoundException('Admin not found');
+
+    await this.admin_repo.remove(admin);
+    await this.user_repo.remove(admin.user);
+
+    this.eventEmitter.emit('user.deleted', userId);
+    return 'Admin deleted successfully';
+  }
+
+  private async deleteDriverUser(userId: number): Promise<string> {
+    const driver = await this.driver_repo.findOne({
+      where: { user: { id: userId } },
+      relations: ['user'],
+    });
+    if (!driver) throw new NotFoundException('Driver not found');
+
+    await this.driver_repo.remove(driver);
+    await this.user_repo.remove(driver.user);
+
+    this.eventEmitter.emit('user.deleted', userId);
+    return 'Driver deleted successfully';
+  }
+
+  private async deleteOfficerUser(userId: number): Promise<string> {
+    const officer = await this.officer_repo.findOne({
+      where: { user: { id: userId } },
+      relations: ['user'],
+    });
+    if (!officer) throw new NotFoundException('Officer not found');
+
+    await this.officer_repo.remove(officer);
+    await this.user_repo.remove(officer.user);
+
+    this.eventEmitter.emit('user.deleted', userId);
+    return 'Officer deleted successfully';
+  }
+
+  private async deleteCompanyOwner(userId: number): Promise<string> {
+    const owner = await this.company_owner_repo.findOne({
+      where: { user: { id: userId } },
+      relations: ['user'],
+    });
+    if (!owner) throw new NotFoundException('Company owner not found');
+
+    await this.company_owner_repo.remove(owner);
+    await this.user_repo.remove(owner.user);
+
+    this.eventEmitter.emit('user.deleted', userId);
+    return 'Company owner deleted successfully';
+  }
+
+  private async deleteNormalUser(userId: number): Promise<string> {
+    const user = await this.user_repo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    await this.user_repo.remove(user);
+    this.eventEmitter.emit('user.deleted', userId);
+    return 'User deleted successfully';
   }
 }
 

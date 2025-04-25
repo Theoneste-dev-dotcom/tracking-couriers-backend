@@ -1,7 +1,9 @@
 // notifications/events/user.events.ts
 import { OnEvent } from '@nestjs/event-emitter';
 import { NotificationsService } from '../notifServices.service';
+import { Injectable } from '@nestjs/common';
 
+@Injectable()
 export class UserEvents {
   constructor(private readonly notificationsService: NotificationsService) {}
 

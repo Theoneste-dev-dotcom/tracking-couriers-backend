@@ -15,6 +15,7 @@ import { rootCertificates } from 'tls';
 
 import { join } from 'path';
 import { ServeStaticModule } from '@nestjs/serve-static';
+
 @Module({
   imports: [
   ServeStaticModule.forRoot({ 
@@ -54,7 +55,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
   ],
 
   controllers:[AppController],
-  
+ 
 
 })
 export class AppModule {}

@@ -6,10 +6,10 @@ import { AuthModule } from '../auth/auth.module';
 import { CompaniesModule } from '../companies/companies.module';
 import { UsersModule } from '../users/users.module';
 import { UserEvents } from './events/user.events';
-import { NotificationGateway } from './gateways/notifications.gateway';
 import { NotificationsService } from './notifServices.service';
 import { NotificationsGateway } from './notification.gateway';
 import { NotificationService } from './notifications.service';
+import { AuthGuard } from '../auth/auth.guard';
 
 @Module({
   imports:[
@@ -20,7 +20,7 @@ import { NotificationService } from './notifications.service';
   
   ],
   controllers: [NotificationsController],
-  providers: [NotificationsService, NotificationGateway, UserEvents, NotificationsGateway, NotificationService],
-  exports: [NotificationsService, NotificationService]
+  providers: [NotificationsService, UserEvents, NotificationsGateway, NotificationService, AuthGuard],
+  exports: [NotificationsService, NotificationService, NotificationsGateway]
 })
 export class NotificationsModule {}

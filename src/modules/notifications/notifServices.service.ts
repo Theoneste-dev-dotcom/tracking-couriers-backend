@@ -36,9 +36,11 @@ export class NotificationsService {
     const recipients = await this.userService.getCompanyMembers(companyId, [
       Role.ADMIN,
       Role.OFFICER,
-      Role.DRIVER
+      Role.COMPANY_OWNER
     ]);
 
+
+    console.log("recipients are => ", recipients)
   
     // Send via WebSocket
     recipients.forEach(user => {
@@ -50,7 +52,7 @@ export class NotificationsService {
 
   async handleUserEvent(userId: number, action: 'created' | 'updated' | 'deleted') {
     const user = await this.userService.findOneById(userId);
-    const company = await this.companyService.getUserCompany(user);
+    const company = await this.userService.getUserCompany(userId);
     
     if (!company) return;
 

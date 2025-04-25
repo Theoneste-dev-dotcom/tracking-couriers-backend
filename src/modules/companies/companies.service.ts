@@ -63,12 +63,7 @@ export class CompaniesService {
   }
 
 
-  getUserCompany(sub: any) {
-    return this.companyRepository.findOne({
-      where: { id: sub.companyId },
-      relations: ['owner', 'drivers', 'officers', 'clients'],
-    });
-  }
+
   async findAll(): Promise<CompanyResponseDto[]> {
     return this.companyRepository.find();
   }

@@ -13,6 +13,7 @@ import {
   UseInterceptors,
   UploadedFile,
   NotFoundException,
+  Req,
 } from '@nestjs/common';
 import { UserService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -41,7 +42,6 @@ export class UsersController {
     @Query('companyId') companyId?: number,
     @Query('currentId') currentId?: number,
   ) {
-    
     if (currentId) {
       const currentUser = await this.usersService.findOneById(currentId);
       return this.usersService.createUser(
@@ -74,26 +74,31 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
-   //get user company
-    @Get('user-company')
-    @UseGuards(AuthGuard)
-    async getUserCompany(@Request() req) {
-      return this.usersService.getUserCompany(req.user.sub);
-    }
+  //get user company
+  @Get('user-company')
+  @UseGuards(AuthGuard)
+  async getUserCompany(@Request() req) {
+    return this.usersService.getUserCompany(req.user.sub);
+  }
+
+  // getting company members
+  @Get('company-members')
+  @UseGuards(AuthGuard)
+  async getCompanyMembers(@Request() req) {
+    return this.usersService.getCompanyMembers(req.user.sub, [Role.DRIVER, Role.OFFICER, Role.ADMIN, Role.COMPANY_OWNER]);
+  }
 
   // get profile image
   @Get('profile/image')
   @UseGuards(AuthGuard)
-  async getProfileImage(
-    @Request() req,
-  ) {
+  async getProfileImage(@Request() req) {
     const filename = await this.usersService.getProfileImage(req.user.sub);
     if (!filename) {
       throw new NotFoundException('Profile image not found');
     }
     return {
       imageUrl: `http://localhost:3001/uploads/profilepics/${filename}`,
-    }
+    };
   }
 
   @UseGuards(AuthGuard)
@@ -105,7 +110,6 @@ export class UsersController {
   @UseGuards(AuthGuard)
   @Get('user-company/company')
   async getUserCompanies(@Request() req) {
-    console.log(req.user, "the request user")
     return this.usersService.getAssociatedCompany(req.user.sub, req.user.role);
   }
 
@@ -129,12 +133,12 @@ export class UsersController {
     return this.usersService.updateUser(id, updateUserDto, currentUser, file);
   }
 
-  // @UseGuards(AuthGuard)
-  // @Roles(Role.ADMIN, Role.CLIENT, Role.COMPANY_OWNER)
-  // @Delete(':id')
-  // remove(@Param('id') id: number) {
-  //   return this.usersService.remove(id);
-  // }
+  @UseGuards(AuthGuard)
+  @Roles(Role.ADMIN, Role.CLIENT, Role.COMPANY_OWNER)
+  @Delete(':id')
+  remove(@Param('id') id: number, @Request() req) {
+    return this.usersService.deleteUserById(id, req.user.sub);
+  }
 
   // @Post(':id/assign-role')
   // @Roles(Role.ADMIN)
