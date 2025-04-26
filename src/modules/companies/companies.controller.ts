@@ -17,8 +17,8 @@ export class CompaniesController {
 
 
   @Post()
-  @UseGuards(AuthGuard,RolesGuard)
-  @Roles(Role.ADMIN, Role.COMPANY_OWNER)
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.COMPANY_OWNER)
   create(@Body() createCompanyDto: CreateCompanyDto, @Request() req) {
     const user:User = req.user;
     return this.companiesService.create(createCompanyDto, user);
