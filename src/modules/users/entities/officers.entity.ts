@@ -10,6 +10,6 @@ export class Officer {
   @ManyToOne(() => Company, (company) => company.officers)
   officerInCompany: Company;
 
-  @OneToOne(()=> User,{onDelete:'CASCADE'})
+  @OneToOne(()=> User,{cascade:true ,onDelete:'CASCADE'})
   user:User;
 }
