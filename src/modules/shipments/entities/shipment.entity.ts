@@ -32,8 +32,7 @@ export class Shipment {
   @IsNotEmpty()
   name:string;
 
-  @OneToOne(() => ShipmentUpdate, { nullable: true })
-  @JoinColumn({ name: 'shipment_update_id' })
+  @OneToOne(() => ShipmentUpdate, (shipmentUpdate) => shipmentUpdate.shipment)
   shipmentUpdate: ShipmentUpdate;
 
   @ManyToOne(()=> User)

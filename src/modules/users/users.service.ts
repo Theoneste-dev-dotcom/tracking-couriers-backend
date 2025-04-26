@@ -618,7 +618,7 @@ export class UserService {
   async deleteUserById(userId: number, currentUserId:number): Promise<string> {
     const user = await this.user_repo.findOne({
       where: { id: userId },
-      relations: ['admins', 'drivers', 'officers', 'owners'],
+      relations: ['admin', 'driver', 'officer', 'owner'],
     });
 
     if (!user) {
@@ -631,7 +631,7 @@ export class UserService {
 
     const currentUser = await this.user_repo.findOne({
       where: { id: currentUserId },
-      relations: ['admins', 'drivers', 'officers', 'owners'],
+      relations: ['admin', 'driver', 'officer', 'owner'],
     })
     if(currentUser == null || currentUser == undefined) {
       throw new UnauthorizedException('You must be logged in to delete a user');

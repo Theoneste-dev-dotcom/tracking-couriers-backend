@@ -1,6 +1,5 @@
 import { Company } from "src/modules/companies/entities/company.entity";
-import { User } from "src/modules/users/entities/user.entity";
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('branches')
 export class Branch {
@@ -22,6 +21,7 @@ export class Branch {
     @Column({nullable:true})
     email?:string
 
-    @ManyToOne(()=> Company, (company)=> company.branches)
+    @ManyToOne(()=> Company, (company)=> company.branches, {cascade:true, onDelete:'CASCADE'})
+    @JoinColumn({name:"company_id"})
     company:Company
 }

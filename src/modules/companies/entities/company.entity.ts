@@ -56,9 +56,7 @@ import { Officer } from 'src/modules/users/entities/officers.entity';
     @OneToOne(()=> CompanyOwner, (owner)=> owner.ownedCompany)
     owner:CompanyOwner;
 
-    @OneToMany(() => Shipment, (shipment) => shipment.company, {
-    cascade:false,
-    })
+    @OneToMany(() => Shipment, (shipment) => shipment.company)
     shipments: Shipment[]; 
 
     @OneToOne(()=> Admin, (admin)=> admin.adminInCompany, {
@@ -68,10 +66,7 @@ import { Officer } from 'src/modules/users/entities/officers.entity';
     admin:Admin;
 
 
-    @OneToMany(()=> Branch, (branch)=> branch.company, {
-      cascade:true,
-    onDelete:'CASCADE'
-    })
+    @OneToMany(()=> Branch, (branch)=> branch.company)
     branches: Branch[]
     // @OneToMany(()=> Branch, (branch)=> branch.companyId)
     // branches: Branch[]

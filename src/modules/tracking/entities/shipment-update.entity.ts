@@ -15,7 +15,7 @@ export class ShipmentUpdate {
   id: number;
   
   //relationship between the shipment and shipment update
-  @OneToOne(() => Shipment, (shipment) => shipment.shipmentUpdate) 
+  @OneToOne(() => Shipment, (shipment) => shipment.shipmentUpdate, { onDelete: 'CASCADE' }) 
   @JoinColumn({name: "shipment_id"})
   shipment: Shipment; 
 
