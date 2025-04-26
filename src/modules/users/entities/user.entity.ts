@@ -49,10 +49,10 @@ export class User {
   @OneToOne(() => CompanyOwner, (ow) => ow.user)
   owner: CompanyOwner;
 
-  @OneToMany(() => Driver, (driver) => driver.user)
+  @OneToOne(() => Driver, (driver) => driver.user)
   driver: Driver;
 
-  @OneToMany(() => Officer, (officer) => officer.user)
+  @OneToOne(() => Officer, (officer) => officer.user)
   officer: Officer;
 
   @OneToOne(() => Admin, (admin) => admin.user)

@@ -64,7 +64,7 @@ export class AuthService {
     } catch (error) {
       console.log(error);
       throw new UnauthorizedException(
-        'Invalid credentials, pls check you email and address',
+        'Invalid credentials, pls check you email address or password',
       );
     }
   }

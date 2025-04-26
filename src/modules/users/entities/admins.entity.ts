@@ -7,7 +7,8 @@ export class Admin {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Company, (company) => company.admin)
+  @ManyToOne(() => Company, (company) => company.admin, {cascade:true, onDelete: 'CASCADE'})
+  @JoinColumn({name:"company_id"})
   adminInCompany: Company;
 
   @OneToOne(() => User, {cascade:true, onDelete: 'CASCADE'})

@@ -10,8 +10,8 @@ export class Driver {
   @Column({nullable:false})
   vehicleId:string;
 
-  @ManyToOne(() => Company, (company) => company.drivers)
-  @JoinTable()
+  @ManyToOne(() => Company, (company) => company.drivers, {cascade:true, onDelete: 'CASCADE'})
+  @JoinColumn({name:"company_id"})
   driverInCompany: Company;
 
   @OneToOne(()=> User,{cascade:true, onDelete: 'CASCADE'} )

@@ -12,7 +12,7 @@ export class CompanyOwner {
     cascade:true,
     onDelete:'CASCADE'
   })
-  @JoinColumn()
+  @JoinColumn({name:'company_id'})
   ownedCompany: Company;
 
   @OneToOne(()=> User, {

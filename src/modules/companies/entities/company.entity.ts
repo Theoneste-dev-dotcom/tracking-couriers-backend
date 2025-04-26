@@ -40,17 +40,10 @@ import { Officer } from 'src/modules/users/entities/officers.entity';
     })
     clients:Client[];
 
-    @OneToMany(()=> Driver, (driver)=> driver.driverInCompany , {
-      cascade:true,
-    onDelete:'CASCADE'
-    })
-    @JoinTable()
+    @OneToMany(()=> Driver, (driver)=> driver.driverInCompany ,)
     drivers?:Driver[];
 
-    @OneToMany(()=>Officer, (officer)=> officer.officerInCompany, {
-      cascade:true,
-    onDelete:'CASCADE'
-    })
+    @OneToMany(()=>Officer, (officer)=> officer.officerInCompany)
     officers?:Officer[];
 
     @OneToOne(()=> CompanyOwner, (owner)=> owner.ownedCompany)
@@ -59,10 +52,7 @@ import { Officer } from 'src/modules/users/entities/officers.entity';
     @OneToMany(() => Shipment, (shipment) => shipment.company)
     shipments: Shipment[]; 
 
-    @OneToOne(()=> Admin, (admin)=> admin.adminInCompany, {
-      cascade:true,
-    onDelete:'CASCADE'
-    })
+    @OneToOne(()=> Admin, (admin)=> admin.adminInCompany,)
     admin:Admin;
 
 
