@@ -7,6 +7,7 @@ import {
   UnauthorizedException,
   ConflictException,
   ConsoleLogger,
+  UseGuards,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
@@ -40,6 +41,8 @@ import * as fs from 'fs';
 import { join } from 'path';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { NotificationEvent } from 'src/common/enums/notification-events.enum';
+import { RolesGuard } from 'src/common/guards/roles.guard';
+import { Roles } from 'src/common/decorators/roles.decorator';
 
 @Injectable()
 export class UserService {
@@ -348,7 +351,7 @@ export class UserService {
   async findOneById(id: number): Promise<User> {
     const user = await this.user_repo.findOne({ where: { id } });
     if (!user) {
-      throw new NotFoundException('User not found  why');
+      throw new NotFoundException('User not found');
     }
 
     return user;
@@ -357,7 +360,7 @@ export class UserService {
   async findUser(id: number): Promise<User> {
     const user = await this.user_repo.findOne({ where: { id } });
     if (!user) {
-      throw new NotFoundException('User not found  why');
+      throw new NotFoundException('User not found');
     }
     return user;
   }
@@ -611,22 +614,32 @@ export class UserService {
     }
   }
 
-  async deleteUserById(userId: number, currentUser: User): Promise<string> {
+
+  async deleteUserById(userId: number, currentUserId:number): Promise<string> {
     const user = await this.user_repo.findOne({
       where: { id: userId },
-      relations: ['admin', 'driver', 'officer', 'companyOwner'],
+      relations: ['admins', 'drivers', 'officers', 'owners'],
     });
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    if (!currentUser) {
+    if (!currentUserId) {
       throw new UnauthorizedException('You must be logged in to delete a user');
     }
 
+    const currentUser = await this.user_repo.findOne({
+      where: { id: currentUserId },
+      relations: ['admins', 'drivers', 'officers', 'owners'],
+    })
+    if(currentUser == null || currentUser == undefined) {
+      throw new UnauthorizedException('You must be logged in to delete a user');
+    }
+    const canDeleteUse =  this.validateDeletionPermissions(user, currentUser);
+
     switch (user.role) {
-      case Role.ADMIN:
+      case Role.ADMIN:        
         return this.deleteAdminUser(userId);
       case Role.DRIVER:
         return this.deleteDriverUser(userId);
@@ -640,6 +653,11 @@ export class UserService {
   }
 
   private async deleteAdminUser(userId: number): Promise<string> {
+    try {
+     
+    } catch(err) {
+      console.log(err)
+    }
     const admin = await this.admin_repo.findOne({
       where: { user: { id: userId } },
       relations: ['user'],
@@ -662,7 +680,6 @@ export class UserService {
 
     await this.driver_repo.remove(driver);
     await this.user_repo.remove(driver.user);
-
     this.eventEmitter.emit('user.deleted', userId);
     return 'Driver deleted successfully';
   }
@@ -676,11 +693,14 @@ export class UserService {
 
     await this.officer_repo.remove(officer);
     await this.user_repo.remove(officer.user);
+    
 
     this.eventEmitter.emit('user.deleted', userId);
     return 'Officer deleted successfully';
   }
 
+
+  @Roles('SYSTEM')
   private async deleteCompanyOwner(userId: number): Promise<string> {
     const owner = await this.company_owner_repo.findOne({
       where: { user: { id: userId } },
@@ -691,7 +711,7 @@ export class UserService {
     await this.company_owner_repo.remove(owner);
     await this.user_repo.remove(owner.user);
 
-    this.eventEmitter.emit('user.deleted', userId);
+    this.eventEmitter.emit('user.deleted', userId);``
     return 'Company owner deleted successfully';
   }
 
@@ -699,38 +719,36 @@ export class UserService {
     const user = await this.user_repo.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
 
-    await this.user_repo.remove(user);
+     await this.user_repo.remove(user);
     this.eventEmitter.emit('user.deleted', userId);
     return 'User deleted successfully';
   }
+  private validateDeletionPermissions(user: User, currentUser: User): void {
+
+    // Users can delete themselves
+    if (currentUser && currentUser.id === user.id) return;
+
+    // Role-specific permissi
+    //ons
+    if(currentUser.role !== undefined) {
+
+    }
+    switch (user.role) {
+      case Role.ADMIN:
+        if (currentUser.role !== Role.COMPANY_OWNER) {
+          throw new ForbiddenException('Only company owners can delete admins');
+        }
+        break;
+      case Role.OFFICER:
+        if (![Role.ADMIN, Role.COMPANY_OWNER].includes(currentUser.role)) {
+          throw new ForbiddenException('Only admins or company owners can delete officers');
+        }
+        break;
+      case Role.DRIVER:
+        if (![Role.ADMIN, Role.COMPANY_OWNER].includes(currentUser.role)) {
+          throw new ForbiddenException('Only admins or company owners can delete drivers');
+        }
+        break;
+    }
 }
-
-//   private validateDeletionPermissions(user: User, currentUser?: User): void {
-//     // System-wide admins can delete anyone
-//     if (currentUser?.role === Role.SUPER_ADMIN) return;
-
-//     // Users can delete themselves
-//     if (currentUser && currentUser.id === user.id) return;
-
-//     // Role-specific permissions
-//     switch (user.role) {
-//       case Role.COMPANY_OWNER:
-//         throw new ForbiddenException('Cannot delete company owners');
-//       case Role.ADMIN:
-//         if (currentUser?.role !== Role.COMPANY_OWNER) {
-//           throw new ForbiddenException('Only company owners can delete admins');
-//         }
-//         break;
-//       case Role.OFFICER:
-//         if (currentUser?.role !== Role.ADMIN) {
-//           throw new ForbiddenException('Only admins can delete officers');
-//         }
-//         break;
-//       case Role.DRIVER:
-//         if (![Role.ADMIN, Role.OFFICER].includes(currentUser?.role)) {
-//           throw new ForbiddenException('Only admins/officers can delete drivers');
-//         }
-//         break;
-//     }
-//   }
-// }
+}

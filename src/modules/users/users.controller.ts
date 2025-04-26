@@ -34,7 +34,7 @@ import { multerConfig } from 'src/config/multer.config';
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UserService) {}
-
+  
   @Post()
   async create(
     @Body() createUserDto: CreateUserDto,

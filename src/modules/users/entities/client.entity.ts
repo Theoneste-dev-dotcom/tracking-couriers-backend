@@ -1,5 +1,5 @@
 import { Company } from 'src/modules/companies/entities/company.entity';
-import { Column, Entity, JoinTable, ManyToMany, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { User } from './user.entity';
 
 @Entity('clients')
@@ -21,6 +21,7 @@ export class Client {
   })
   clientOfCompanies: Company[];
 
-  @ManyToOne(()=> User, (user)=> user.clients)
+  @OneToOne(()=> User, {cascade:true,onDelete: 'CASCADE'})
+  @JoinColumn({name:"user_id"})
   user:User;
 }

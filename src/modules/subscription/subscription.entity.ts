@@ -7,7 +7,7 @@ export class Subscription {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Company, (company) => company.subscriptionPlan, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Company, (company) => company.subscriptionPlan)
   company: Company;
 
   @Column({ type: 'enum', enum: SubscriptionPlan, default: SubscriptionPlan.FREE_TRIAL })

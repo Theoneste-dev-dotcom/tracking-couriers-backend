@@ -11,6 +11,7 @@ import { UseGuards } from '@nestjs/common';
 import { CompaniesService } from '../companies/companies.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { UserService } from '../users/users.service';
+import { AuthService } from '../auth/auth.service';
 
 @UseGuards(AuthGuard)
 @WebSocketGateway({
@@ -22,15 +23,15 @@ export class NotificationsGateway
 {
   @WebSocketServer() server: Server;
   private connectedUsers = new Map<number, string>();
-  authService: any;
 
   constructor(
     private readonly companyService: CompaniesService,
     private readonly userService: UserService,
+    private readonly authService: AuthService,
   ) {}
 
   async handleConnection(client: Socket) {
-    console.log('client connected Success with id ' + client.id);
+
     const token = client.handshake.auth?.token;
 
     if (!token) {
@@ -40,24 +41,37 @@ export class NotificationsGateway
 
     try {
       const user = await this.authService.verifyToken(token, true);
-      this.connectedUsers.set(user.sub, client.id);
-      const company = await this.userService.getUserCompany(user.sub);
-      console.log('company is => ', company);
-      if (company) {
-        client.join(`company-${company.id}`);
+      if (user) {
+        console.log("✅ User connected:", user.name, client.id);
+        this.connectedUsers.set(user.id, client.id);
+        const company = await this.userService.getUserCompany(user.id);
+        if (company) {
+          client.join(`company-${company.id}`);
+        }
+     
+      }else {
+        client.disconnect(true);
       }
-      console.log('✅ User connected:', user?.username);
     } catch (err) {
       console.error('❌ Token verification failed:', err.message);
-      console.log('the connected users are => ', this.connectedUsers);
       client.disconnect(true);
       throw new WsException(err.message);
     }
   }
 
   handleDisconnect(client: Socket) {
-    const user = client.handshake.auth.user;
-    this.connectedUsers.delete(user.sub);
+    let userId;
+
+    for (const [key, value] of this.connectedUsers) {
+      if (value === client.id) {
+        userId = key;
+        break;
+      }
+    }
+    if (userId) {
+      this.connectedUsers.delete(userId);
+      console.log('✅ User disconnected:', userId);
+    }
   }
 
   sendToUser(notification: any, userId?: number) {
@@ -65,6 +79,7 @@ export class NotificationsGateway
     if (!userId) return;
     const clientId = this.connectedUsers.get(userId);
     if (clientId) {
+      console.log("notification sent to this client =>", clientId);
       this.server.to(clientId).emit('new-notification', notification);
     }
   }

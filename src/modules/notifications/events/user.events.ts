@@ -9,7 +9,7 @@ export class UserEvents {
 
   @OnEvent('user.created')
   async handleUserCreated(userId: number) {
-    await this.notificationsService.handleUserEvent(userId, 'created');
+    await this.notificationsService.handleUserEvent(userId, 'added');
   }
 
   @OnEvent('user.updated')

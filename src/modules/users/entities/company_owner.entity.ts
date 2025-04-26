@@ -8,10 +8,17 @@ export class CompanyOwner {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @OneToOne(() => Company, (company) => company.owner)
+  @OneToOne(() => Company, (company) => company.owner, {
+    cascade:true,
+    onDelete:'CASCADE'
+  })
   @JoinColumn()
   ownedCompany: Company;
 
-  @ManyToOne(()=> User, (user)=> user.owners )
+  @OneToOne(()=> User, {
+    cascade:true,
+    onDelete:'CASCADE'
+  })
+  @JoinColumn({name:'user_id'})
   user: User;
 }

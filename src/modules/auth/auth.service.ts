@@ -124,13 +124,12 @@ export class AuthService {
         console.log('failed to get the token');
       }
 
-      console.log(token);
       const payload = await this.jwtService.verify(token, { secret });
 
       const user = await this.userService.findOneById(payload.sub);
-      console.log(user);
-
-      return user;
+    if(user) return user;
+    else return null;
+     
     } catch (err) {
       console.log(err);
       if (isWs) {

@@ -12,6 +12,8 @@ import { NotificationsGateway } from './notification.gateway';
 
 @Injectable()
 export class NotificationService {
+ 
+
   private readonly twilioClient;
   private readonly emailTransporter;
 
@@ -20,7 +22,7 @@ export class NotificationService {
     private readonly notifcationRepository: Repository<Notification>,
     private readonly companyService: CompaniesService,
     private readonly usersService: UserService,
-    private readonly notificationGateway:NotificationsGateway,
+    private readonly notificationGateway: NotificationsGateway,
   ) {}
   // async sendNotification(
   //   notificationDto: CreateNotificationDto,
@@ -38,6 +40,55 @@ export class NotificationService {
   //   this.notificationGateway.sendNotificationToUser((await user).id, savedNotification)
   //   return savedNotification
   // }
+
+  getAllNotifications() {
+    return this.notifcationRepository.find();
+  }
+
+   async getNotificationsInCompany(companyId: number) {
+    const company = await this.companyService.findCompany(companyId)
+    if(!company) {
+      throw new Error('Company not found')
+    }
+
+    const companyLogs = await this.notifcationRepository.findBy({company: {id: company.id},})
+    console.log(companyLogs)
+    return companyLogs
+  
+  }
+
+  async getNotificationByType(
+    notificationType: NotificationType,
+  ): Promise<Notification[]> {
+    let notifications;
+
+    switch (notificationType) {
+      case NotificationType.USER:
+        notifications = await this.notifcationRepository.find({
+          where: { type: notificationType },
+          order: { id: 'DESC' },
+        });
+        break;
+      case NotificationType.COMPANY:
+        notifications = await this.notifcationRepository.find({
+          where: { type: notificationType },
+          order: { id: 'DESC' },
+        });
+        break;
+      case NotificationType.SHIPMENT:
+        notifications = await this.notifcationRepository.find({
+          where: { type: notificationType },
+          order: { id: 'DESC' },
+        });
+        break;
+      default:
+        notifications = await this.notifcationRepository.find({
+          where: { type: notificationType },
+          order: { id: 'DESC' },
+        });
+    }
+    return notifications;
+  }
 
   async markNotificationAsSeen(notificationId: number): Promise<Notification> {
     const notificaion = await this.notifcationRepository.findOneBy({
@@ -67,7 +118,7 @@ export class NotificationService {
   // }
 
   async sendNotificationToEmail(
-   notification:CreateNotificationDto
+    notification: CreateNotificationDto,
   ): Promise<void> {
     const user = await this.usersService.findOneById(notification.userId);
     if (!user || !user.email) {
@@ -78,7 +129,7 @@ export class NotificationService {
       await this.emailTransporter.sendMail({
         from: process.env.EMAIL_USER,
         to: user.email,
-        subject: "Notification header",
+        subject: 'Notification header',
         text: notification.message,
         html: `<p>${notification.message}</p>`,
       });
@@ -91,7 +142,7 @@ export class NotificationService {
   }
 
   async sendNotificationToPhone(
- notification:CreateNotificationDto
+    notification: CreateNotificationDto,
   ): Promise<void> {
     const user = await this.usersService.findOneById(notification.userId);
     if (!user || !user.phone) {

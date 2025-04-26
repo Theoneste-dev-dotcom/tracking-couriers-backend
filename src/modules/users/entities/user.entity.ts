@@ -46,25 +46,32 @@ export class User {
   @Column({ nullable: true })
   about?: string;
 
-  @OneToMany(() => CompanyOwner, (company_ow) => company_ow.user)
-  @JoinTable()
-  owners: CompanyOwner[];
+  // @OneToOne(() => CompanyOwner, (company_ow) => company_ow.user,)
+  // owners: CompanyOwner[];
 
-  @OneToMany(() => Driver, (driver) => driver.user)
-  @JoinTable()
-  drivers: Driver[];
+  // @OneToMany(() => Driver, (driver) => driver.user, {
+  //   cascade:true,
+  //   onDelete:'CASCADE'
+  // })
+  // drivers: Driver[];
 
-  @OneToMany(() => Officer, (officer) => officer.user)
-  @JoinTable()
-  officers: Officer[];
+  // @OneToMany(() => Officer, (officer) => officer.user, {
+  //   cascade:true,
+  //   onDelete:'CASCADE'
+  // })
+  // officers: Officer[];
 
-  @OneToMany(() => Admin, (admin) => admin.user)
-  @JoinTable()
-  admins: Admin[];
+  // @OneToMany(() => Admin, (admin) => admin.user, {
+  //   cascade:true,
+  //   onDelete:'CASCADE'
+  // })
+  // admins: Admin[];
 
-  @OneToMany(() => Client, (client) => client.user)
-  @JoinTable()
-  clients: Client[];
+  // @OneToMany(() => Client, (client) => client.user, {
+  //   cascade:true,
+  //   onDelete:'CASCADE'
+  // })
+  // clients: Client[];
 
   @Column({ nullable: true })
   profilePic?: string;

@@ -1,5 +1,5 @@
 import { Company } from 'src/modules/companies/entities/company.entity';
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, ManyToOne, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { User } from './user.entity';
 
 @Entity('officers')
@@ -10,6 +10,6 @@ export class Officer {
   @ManyToOne(() => Company, (company) => company.officers)
   officerInCompany: Company;
 
-  @ManyToOne(()=> User, (user)=> user.officers)
+  @OneToOne(()=> User,{onDelete:'CASCADE'})
   user:User;
 }

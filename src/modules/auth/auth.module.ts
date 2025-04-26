@@ -24,6 +24,7 @@ import { config } from 'process';
       },
       inject: [ConfigService],
     }),
+    forwardRef(()=> UsersModule)
   ],
   controllers: [AuthController],
   providers: [AuthService, AuthGuard, RolesGuard, JwtService],

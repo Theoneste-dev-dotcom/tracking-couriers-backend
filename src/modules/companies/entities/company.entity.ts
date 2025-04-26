@@ -35,27 +35,43 @@ import { Officer } from 'src/modules/users/entities/officers.entity';
     @Column({ type: 'timestamp', nullable: true })
     subscriptionExpiry: Date | null;
     
-    @ManyToMany(()=> Client, (client)=> client.clientOfCompanies)
+    @ManyToMany(()=> Client, (client)=> client.clientOfCompanies, {
+      cascade:false
+    })
     clients:Client[];
 
-    @OneToMany(()=> Driver, (driver)=> driver.driverInCompany)
+    @OneToMany(()=> Driver, (driver)=> driver.driverInCompany , {
+      cascade:true,
+    onDelete:'CASCADE'
+    })
     @JoinTable()
     drivers?:Driver[];
 
-    @OneToMany(()=>Officer, (officer)=> officer.officerInCompany)
+    @OneToMany(()=>Officer, (officer)=> officer.officerInCompany, {
+      cascade:true,
+    onDelete:'CASCADE'
+    })
     officers?:Officer[];
 
     @OneToOne(()=> CompanyOwner, (owner)=> owner.ownedCompany)
     owner:CompanyOwner;
 
-    @OneToMany(() => Shipment, (shipment) => shipment.company)
+    @OneToMany(() => Shipment, (shipment) => shipment.company, {
+    cascade:false,
+    })
     shipments: Shipment[]; 
 
-    @OneToOne(()=> Admin, (admin)=> admin.adminInCompany)
+    @OneToOne(()=> Admin, (admin)=> admin.adminInCompany, {
+      cascade:true,
+    onDelete:'CASCADE'
+    })
     admin:Admin;
 
 
-    @OneToMany(()=> Branch, (branch)=> branch.company)
+    @OneToMany(()=> Branch, (branch)=> branch.company, {
+      cascade:true,
+    onDelete:'CASCADE'
+    })
     branches: Branch[]
     // @OneToMany(()=> Branch, (branch)=> branch.companyId)
     // branches: Branch[]

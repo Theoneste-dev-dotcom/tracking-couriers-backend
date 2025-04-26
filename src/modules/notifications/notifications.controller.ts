@@ -13,6 +13,7 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthGuard } from '../auth/auth.guard';
 import { Subscription } from 'src/common/decorators/subscription.decorator';
 import { SubscriptionPlan } from 'src/common/enums/subscription-plan.enum';
+import { NotificationType } from 'src/common/enums/notitication-type.enum';
 
 @ApiTags('Notifications')
 @Controller('notifications')
@@ -74,7 +75,23 @@ export class NotificationsController {
   //   return this.notificationsService.markNotificationAsSeen(id);
   // }
 
-  @UseGuards(AuthGuard)
+  // get all notifications
+  @Get()
+  async getAllNotifications() {
+    return this.notificationsService.getAllNotifications();
+  }
+
+  // get notifcation by type
+  @Get("type/:type")
+  async getNotifByType(@Param('type') type: NotificationType) {
+    return this.notificationsService.getNotificationByType(type);
+  }
+
+  @Get("/company/:companyId")
+  async getCompanyLogs(@Param('companyId') companyId: number) {
+    return this.notificationsService.getNotificationsInCompany(companyId)
+  }
+
   @Subscription(SubscriptionPlan.BASIC, SubscriptionPlan.PREMIUM)
   @Post('email')
   @ApiOperation({ summary: 'Send email notification' })

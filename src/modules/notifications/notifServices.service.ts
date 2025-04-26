@@ -50,7 +50,7 @@ export class NotificationsService {
     return notification;
   }
 
-  async handleUserEvent(userId: number, action: 'created' | 'updated' | 'deleted') {
+  async handleUserEvent(userId: number, action: 'added' | 'updated' | 'deleted') {
     const user = await this.userService.findOneById(userId);
     const company = await this.userService.getUserCompany(userId);
     

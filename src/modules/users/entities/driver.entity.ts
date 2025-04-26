@@ -1,5 +1,5 @@
 import { Company } from 'src/modules/companies/entities/company.entity';
-import { Column, Entity, JoinTable, ManyToOne, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, JoinTable, ManyToOne, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { User } from './user.entity';
 
 @Entity('drivers')
@@ -14,6 +14,7 @@ export class Driver {
   @JoinTable()
   driverInCompany: Company;
 
-  @ManyToOne(()=> User, (user)=> user.drivers )
+  @OneToOne(()=> User,{cascade:true, onDelete: 'CASCADE'} )
+  @JoinColumn({name:"user_id"})
   user: User;
 }
