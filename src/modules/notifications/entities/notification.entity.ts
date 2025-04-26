@@ -9,7 +9,7 @@ export class Notification {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(()=> Company) 
+  @ManyToOne(()=> Company, {cascade: true, onDelete:'CASCADE'}) 
   @JoinColumn({name: 'company_id'})
   company: Company
 

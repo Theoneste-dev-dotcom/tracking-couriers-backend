@@ -57,6 +57,27 @@ export class NotificationService {
   
   }
 
+  async markNotificationsAsRead(companyId: number) {
+    const company = await this.companyService.findCompany(companyId);
+    if (!company) {
+      throw new Error('Company not found');
+    }
+  
+    const companyLogs = await this.notifcationRepository.findBy({ company: { id: company.id } });
+    
+    if (companyLogs.length === 0) {
+      return { message: 'No notifications to update' };
+    }
+  
+    for (const log of companyLogs) {
+      log.seen = true; // assuming your notification entity has a `read` field
+      await this.notifcationRepository.save(log);
+    }
+  
+    return { message: `${companyLogs.length} notifications marked as read.` };
+  }
+  
+
   async getNotificationByType(
     notificationType: NotificationType,
   ): Promise<Notification[]> {

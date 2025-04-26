@@ -39,7 +39,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
         database: configService.get<string>('DB_NAME'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'], 
         synchronize: true, 
-        logging: true, 
+        logging: false, 
       }),
       inject: [ConfigService],
     }),

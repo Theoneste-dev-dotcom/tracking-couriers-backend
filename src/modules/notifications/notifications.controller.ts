@@ -87,6 +87,13 @@ export class NotificationsController {
     return this.notificationsService.getNotificationByType(type);
   }
 
+  @Put("/company/:companyId/mark-as-read")
+async markCompanyNotificationsAsRead(@Param('companyId') companyId: number) {
+  return this.notificationsService.markNotificationsAsRead(companyId);
+}
+
+
+
   @Get("/company/:companyId")
   async getCompanyLogs(@Param('companyId') companyId: number) {
     return this.notificationsService.getNotificationsInCompany(companyId)
