@@ -7,6 +7,7 @@ import {
   Put,
   UseGuards,
   Request,
+  NotFoundException,
 } from '@nestjs/common';
 import { NotificationService } from './notifications.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
@@ -77,6 +78,12 @@ export class NotificationsController {
     return this.notificationsService.getAllNotifications();
   }
 
+  @UseGuards(AuthGuard)
+  @Get('user')
+  async getUserNotifications(@Request() req) {
+    console.log("the user requesting has id ", req.user.sub)
+    return await this.notificationsService.getUserNotifications(req.user.sub);
+  }
   // get notifcation by type
   @Get("type/:type")
   async getNotifByType(@Param('type') type: NotificationType) {
@@ -102,7 +109,10 @@ async markAsRead(@Request() req, @Param('notificationId') notificationId: number
 
   @Get("/company/:companyId")
   async getCompanyLogs(@Param('companyId') companyId: number) {
-    return this.notificationsService.getNotificationsInCompany(companyId)
+    if(companyId) {
+      return this.notificationsService.getNotificationsInCompany(companyId)
+    }
+    throw new NotFoundException("pls you need to provide the companyId")
   }
 
   @Subscription(SubscriptionPlan.BASIC, SubscriptionPlan.PREMIUM)

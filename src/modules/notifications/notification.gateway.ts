@@ -42,6 +42,14 @@ export class NotificationsGateway
     try {
       const user = await this.authService.verifyToken(token, true);
       if (user) {
+        const existingClientId = this.connectedUsers.get(user.id);
+
+        if(existingClientId && existingClientId !== client.id){
+          const oldClient = this.server.sockets.sockets.get(existingClientId);
+          if (oldClient) {
+            oldClient.disconnect(true)
+          }
+        }
         console.log("✅ User connected:", user.name, client.id);
         this.connectedUsers.set(user.id, client.id);
         const company = await this.userService.getUserCompany(user.id);
@@ -53,7 +61,7 @@ export class NotificationsGateway
         client.disconnect(true);
       }
     } catch (err) {
-      console.error('❌ Token verification failed:', err.message);
+      console.error('❌ Token verification failed:', err.message, token);
       client.disconnect(true);
       throw new WsException(err.message);
     }

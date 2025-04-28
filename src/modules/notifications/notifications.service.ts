@@ -102,6 +102,7 @@ export class NotificationService {
   async getNotificationsInCompany(
     companyId: number,
   ): Promise<CompanyNotification[]> {
+    console.log("the company Id is ", companyId )
     const company = await this.companyService.findOne(companyId);
     if (!company) {
       throw new Error('Company not found');
@@ -120,13 +121,10 @@ export class NotificationService {
     onlyUnread: boolean = false,
   ): Promise<UserNotification[]> {
     const where: any = { user: { id: userId } };
-    if (onlyUnread) {
-      where.isRead = false;
-    }
 
     return this.userNotificationRepository.find({
       where,
-      relations: ['notification', 'user'],
+      relations: ['notification'],
       order: { createdAt: 'DESC' },
     });
   }

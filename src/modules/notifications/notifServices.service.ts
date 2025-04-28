@@ -17,8 +17,10 @@ export class NotificationsService {
   constructor(
     @InjectRepository(Notification)
     private readonly notificationRepo: Repository<Notification>,
+
     @InjectRepository(UserNotification)
     private readonly userNotificationRepo: Repository<UserNotification>,
+
     private readonly companyService: CompaniesService,
     private readonly userService: UserService,
     private readonly eventEmitter: EventEmitter2,
@@ -64,7 +66,7 @@ export class NotificationsService {
     
     if (!company) return;
 
-    const message = `User ${user.name} has been ${action} successfully`;
+    const message = `${user.role.toUpperCase()} ${user.name} has been ${action} successfully`;
     return this.createAndSendNotification(
       company.id,
       NotificationType.USER,
