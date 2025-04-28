@@ -58,7 +58,6 @@ export class NotificationService {
     const companyNotification = this.companyNotificationRepository.create({
       company,
       notification: savedNotification,
-      isRead: false,
     });
     const savedCompanyNotification =
       await this.companyNotificationRepository.save(companyNotification);

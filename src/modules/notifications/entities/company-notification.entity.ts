@@ -15,9 +15,7 @@ export class CompanyNotification {
   @JoinColumn({ name: 'company_id' })
   company: Company;
 
-  @Column({ default: false })
-  isRead: boolean;
-
   @CreateDateColumn()
   createdAt: Date;
 }
+

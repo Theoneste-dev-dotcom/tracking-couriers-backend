@@ -25,9 +25,6 @@ import {
 } from './dto/update-user1.dto';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { Role } from 'src/common/enums/role.enum';
-import { UserResponseDto } from './dto/user-reponse.dto';
-import { User } from './entities/user.entity';
-import { AssignRoleDto } from './dto/assing-role.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { multerConfig } from 'src/config/multer.config';
 

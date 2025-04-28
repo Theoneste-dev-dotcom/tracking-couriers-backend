@@ -78,7 +78,6 @@ export class AuthGuard implements CanActivate {
       } else if (isWs) {
         const client: Socket = context.switchToWs().getClient<Socket>();
         client.handshake.auth.user = payload;
-        console.log('User attached to handshake:', client.handshake.auth.user); // Debug log
       }
 
       return true;
