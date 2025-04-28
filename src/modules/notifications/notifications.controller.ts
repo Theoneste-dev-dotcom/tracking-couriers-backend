@@ -6,6 +6,7 @@ import {
   Param,
   Put,
   UseGuards,
+  Request,
 } from '@nestjs/common';
 import { NotificationService } from './notifications.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
@@ -61,21 +62,16 @@ export class NotificationsController {
   //   );
   // }
 
-  // @Get('subscription/:companyId')
-  // @ApiOperation({ summary: 'Get subscription related notifications' })
-  // async getSubscriptionNotifications(@Param('companyId') companyId: number) {
-  //   return this.notificationsService.getSubscriptionRelatedNotifications(
-  //     companyId,
-  //   );
-  // }
+  // get subscription related notifications
+  
+  @Get('subscription/:companyId')
+  @ApiOperation({ summary: 'Get subscription related notifications' })
+  async getSubscriptionNotifications(@Param('companyId') companyId: number) {
+    return this.notificationsService.getSubscriptionRelatedNotifications(
+      companyId,
+    );
+  }
 
-  // @Put(':id/mark-seen')
-  // @ApiOperation({ summary: 'Mark a notification as seen' })
-  // async markNotificationAsSeen(@Param('id') id: number) {
-  //   return this.notificationsService.markNotificationAsSeen(id);
-  // }
-
-  // get all notifications
   @Get()
   async getAllNotifications() {
     return this.notificationsService.getAllNotifications();
@@ -84,19 +80,23 @@ export class NotificationsController {
   // get notifcation by type
   @Get("type/:type")
   async getNotifByType(@Param('type') type: NotificationType) {
-    return this.notificationsService.getNotificationByType(type);
+    return this.notificationsService.getNotificationsByType(type);
   }
 
   // marking all users notifications as read
-  @Put("/company/:userId/mark-all-read")
-async markAllUserNotificationsAsRead(@Param('userId') userId: number) {
-  return this.notificationsService.markAllUsersAsRead(userId);
-}
+  @Put('mark-all-read')
+  async markAllAsRead(@Request() req) {
+    const userId = req.user.id;
+    await this.notificationsService.markAllUserNotficationAsRead(userId)
+    return { message: 'All notifications marked as read.' };
+  }
 
 //updateing one user notification to read
-@Put('/company/:userId/:notificationId/read')
-async markUsernotificationAsRead(@Param('userId') userId:number, @Param('notificationId') notificationId:number) {
- return this.notificationsService.markUserNotificationAsRead(userId, notificationId);
+@Put('mark-read/:notificationId')
+async markAsRead(@Request() req, @Param('notificationId') notificationId: number) {
+  const userId = req.user.sub;
+  await this.notificationsService.markUserNotificationAsRead(userId, notificationId);
+  return { message: 'Notification marked as read.' };
 }
 
 

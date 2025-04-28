@@ -1,5 +1,6 @@
   import { Branch } from 'src/branches/entities/branch.entity';
 import { SubscriptionPlan } from 'src/common/enums/subscription-plan.enum';
+import { CompanyNotification } from 'src/modules/notifications/entities/company-notification.entity';
   import { Shipment } from 'src/modules/shipments/entities/shipment.entity';
 import { Admin } from 'src/modules/users/entities/admins.entity';
 import { Client } from 'src/modules/users/entities/client.entity';
@@ -58,9 +59,10 @@ import { Officer } from 'src/modules/users/entities/officers.entity';
 
     @OneToMany(()=> Branch, (branch)=> branch.company)
     branches: Branch[]
-    // @OneToMany(()=> Branch, (branch)=> branch.companyId)
-    // branches: Branch[]
 
+    @OneToMany(()=> CompanyNotification, (notification)=> notification.company)
+    notifications: CompanyNotification[]
+   
     @Column({nullable: true})
     logoUrl?: string;
 

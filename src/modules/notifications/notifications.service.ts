@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Notification } from './entities/notification.entity';
 import { In, Repository } from 'typeorm';
@@ -10,63 +10,124 @@ import * as nodemailer from 'nodemailer';
 import { NotificationType } from 'src/common/enums/notitication-type.enum';
 import { NotificationsGateway } from './notification.gateway';
 import { UserNotification } from './entities/user-notification.entity';
+import { CompanyNotification } from './entities/company-notification.entity';
 
 @Injectable()
 export class NotificationService {
- 
-
   private readonly twilioClient;
   private readonly emailTransporter;
 
   constructor(
     @InjectRepository(Notification)
-    private readonly notifcationRepository: Repository<Notification>,
+    private readonly notificationRepository: Repository<Notification>,
+
     @InjectRepository(UserNotification)
     private readonly userNotificationRepository: Repository<UserNotification>,
+
+    @InjectRepository(CompanyNotification)
+    private readonly companyNotificationRepository: Repository<CompanyNotification>,
+    
     private readonly companyService: CompaniesService,
     private readonly usersService: UserService,
     private readonly notificationGateway: NotificationsGateway,
   ) {}
   getAllNotifications() {
-    return this.notifcationRepository.find();
-  }
-
-   async getNotificationsInCompany(companyId: number) {
-    const company = await this.companyService.findCompany(companyId)
-    if(!company) {
-      throw new Error('Company not found')
-    }
-
-    const companyLogs = await this.notifcationRepository.findBy({company: {id: company.id},})
-    return companyLogs
-  
-  }
-  async getCompanyRelatedNotifications(companyId: number) {
-    const company = await this.companyService.findCompany(companyId);
-
-    if (!company) {
-      throw new Error('Company not found');
-    }
-
-    return this.notifcationRepository.find({
-      where: {
-        company: { id: companyId },
-        type: NotificationType.COMPANY,
-      },
+    return this.notificationRepository.find({
+      relations: ['userNotifications', 'companyNotifications'],
       order: { createdAt: 'DESC' },
     });
   }
 
+  async createCompanyNotification(
+    companyId: number,
+    message: string,
+    type: NotificationType = NotificationType.COMPANY,
+  ): Promise<CompanyNotification> {
+    const company = await this.companyService.findOne(companyId);
+    if (!company) {
+      throw new Error('Company not found');
+    }
 
-  async getUserNotifications(userId: number, onlyUnread = false) {
-    const where = { user: { id: userId } } as any;
+    const notification = this.notificationRepository.create({
+      message,
+      type,
+    });
+    const savedNotification =
+      await this.notificationRepository.save(notification);
+
+    const companyNotification = this.companyNotificationRepository.create({
+      company,
+      notification: savedNotification,
+      isRead: false,
+    });
+    const savedCompanyNotification =
+      await this.companyNotificationRepository.save(companyNotification);
+
+    // Emit real-time notification
+    this.notificationGateway.sendToCompany(companyId, savedCompanyNotification);
+
+    return savedCompanyNotification;
+  } // Create a user-specific notification
+  async createUserNotification(
+    userId: number,
+    message: string,
+    type: NotificationType = NotificationType.USER,
+  ): Promise<UserNotification> {
+    const user = await this.usersService.findOneById(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const notification = this.notificationRepository.create({
+      message,
+      type,
+    });
+    const savedNotification =
+      await this.notificationRepository.save(notification);
+
+    const userNotification = this.userNotificationRepository.create({
+      user,
+      notification: savedNotification,
+      isRead: false,
+    });
+    const savedUserNotification =
+      await this.userNotificationRepository.save(userNotification);
+
+    // Emit real-time notification (assuming notifyUser exists in NotificationsGateway)
+    this.notificationGateway.sendToUser(savedUserNotification, userId);
+
+    return savedUserNotification;
+  }
+
+  // Get notifications for a company
+  async getNotificationsInCompany(
+    companyId: number,
+  ): Promise<CompanyNotification[]> {
+    const company = await this.companyService.findOne(companyId);
+    if (!company) {
+      throw new Error('Company not found');
+    }
+
+    return this.companyNotificationRepository.find({
+      where: { company: { id: companyId } },
+      relations: ['notification', 'company'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  // Get user notifications
+  async getUserNotifications(
+    userId: number,
+    onlyUnread: boolean = false,
+  ): Promise<UserNotification[]> {
+    const where: any = { user: { id: userId } };
     if (onlyUnread) {
       where.isRead = false;
     }
 
     return this.userNotificationRepository.find({
       where,
-      relations: ['notification'],
+      relations: ['notification', 'user'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -87,7 +148,7 @@ export class NotificationService {
     return this.userNotificationRepository.save(userNotif);
   }
 
-  async markAllUsersAsRead(userId: number) {
+  async markAllUserNotficationAsRead(userId: number): Promise<void> {
     const notifications = await this.userNotificationRepository.find({
       where: { user: { id: userId }, isRead: false },
     });
@@ -98,55 +159,88 @@ export class NotificationService {
     await this.userNotificationRepository.save(notifications);
   }
 
-  
-
-  async getNotificationByType(
+  // Get notifications by type
+  async getNotificationsByType(
     notificationType: NotificationType,
   ): Promise<Notification[]> {
-    let notifications;
-
-    switch (notificationType) {
-      case NotificationType.USER:
-        notifications = await this.notifcationRepository.find({
-          where: { type: notificationType },
-          order: { id: 'DESC' },
-        });
-        break;
-      case NotificationType.COMPANY:
-        notifications = await this.notifcationRepository.find({
-          where: { type: notificationType },
-          order: { id: 'DESC' },
-        });
-        break;
-      case NotificationType.SHIPMENT:
-        notifications = await this.notifcationRepository.find({
-          where: { type: notificationType },
-          order: { id: 'DESC' },
-        });
-        break;
-      default:
-        notifications = await this.notifcationRepository.find({
-          where: { type: notificationType },
-          order: { id: 'DESC' },
-        });
-    }
-    return notifications;
+    return this.notificationRepository.find({
+      where: { type: notificationType },
+      relations: ['userNotifications', 'companyNotifications'],
+      order: { createdAt: 'DESC' },
+    });
   }
 
-  // getting user's clients notifications
-  // async getNotificationsByUser(userId: number) {
-  //   const user = await this.usersService.findOneById(userId);
+  // Get shipment-related notifications
+  async getShipmentRelatedNotifications(
+    userId: number,
+    companyId?: number,
+    onlyUnread: boolean = false,
+  ): Promise<UserNotification[] | CompanyNotification[]> {
+    if (companyId) {
+      const company = await this.companyService.findOne(companyId);
+      if (!company) {
+        throw new Error('Company not found');
+      }
 
-  //   if (!user) {
-  //     throw new Error('User not Found!!');
-  //   }
+      const where: any = {
+        company: { id: companyId },
+        notification: { type: NotificationType.SHIPMENT },
+      };
+      if (onlyUnread) {
+        where.isRead = false;
+      }
 
-  //   return this.notifcationRepository.find({
-  //     where: { user: { id: userId } },
-  //     order: { id: 'DESC' },
-  //   });
-  // }
+      return this.companyNotificationRepository.find({
+        where,
+        relations: ['notification', 'company'],
+        order: { createdAt: 'DESC' },
+      });
+    }
 
+    const user = await this.usersService.findOneById(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const where: any = {
+      user: { id: userId },
+      notification: { type: NotificationType.SHIPMENT },
+    };
+    if (onlyUnread) {
+      where.isRead = false;
+    }
+
+    return this.userNotificationRepository.find({
+      where,
+      relations: ['notification', 'user'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  // Get subscription-related notifications
+  async getSubscriptionRelatedNotifications(
+    companyId: number,
+    onlyUnread: boolean = false,
+  ): Promise<CompanyNotification[]> {
+    const company = await this.companyService.findOne(companyId);
+    if (!company) {
+      throw new Error('Company not found');
+    }
+
+    const where: any = {
+      company: { id: companyId },
+      notification: { type: NotificationType.SUBSCRIPTION },
+    };
+    if (onlyUnread) {
+      where.isRead = false;
+    }
+
+    return this.companyNotificationRepository.find({
+      where,
+      relations: ['notification', 'company'],
+      order: { createdAt: 'DESC' },
+    });
+  }
   async sendNotificationToEmail(
     notification: CreateNotificationDto,
   ): Promise<void> {
@@ -193,72 +287,4 @@ export class NotificationService {
       throw new Error('Failed to send SMS notification');
     }
   }
-
-  // ... existing code ...
-
-
-
-  // async getUserRelatedNotifications(userId: number) {
-  //   const user = await this.usersService.findOneById(userId);
-
-  //   if (!user) {
-  //     throw new Error('User not found');
-  //   }
-
-  //   return this.notifcationRepository.find({
-  //     where: {
-  //       user: { id: userId },
-  //       type: NotificationType.USER,
-  //     },
-  //     order: { createdAt: 'DESC' },
-  //   });
-  // }
-
-  // async getShipmentRelatedNotifications(userId: number, companyId?: number) {
-  //   const user = await this.usersService.findOneById(userId);
-
-  //   if (companyId) {
-  //     const company = this.companyService.findCompany(companyId);
-  //   }
-
-  //   if (!user) {
-  //     throw new Error('User not found');
-  //   }
-
-  //   // if no company id provided
-  //   if (!companyId) {
-  //     return this.notifcationRepository.find({
-  //       where: {
-  //         user: { id: userId },
-  //         type: NotificationType.SHIPMENT,
-  //       },
-  //       order: { createdAt: 'DESC' },
-  //     });
-  //   } else {
-  //     return this.notifcationRepository.find({
-  //       where: {
-  //         user: { id: userId },
-  //         type: NotificationType.SHIPMENT,
-  //       },
-  //       order: { createdAt: 'DESC' },
-  //     });
-  //   }
-  //   // if company id provided
-  // }
-
-  // async getSubscriptionRelatedNotifications(companyId: number) {
-  //   const company = await this.companyService.findCompany(companyId);
-
-  //   if (!company) {
-  //     throw new Error('User not found');
-  //   }
-
-  //   return this.notifcationRepository.find({
-  //     where: {
-  //       company: { id: companyId },
-  //       type: NotificationType.SUBSCRIPTION,
-  //     },
-  //     order: { createdAt: 'DESC' },
-  //   });
-  // }
 }
