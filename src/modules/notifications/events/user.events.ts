@@ -2,6 +2,7 @@
 import { OnEvent } from '@nestjs/event-emitter';
 import { NotificationsService } from '../notifServices.service';
 import { Injectable } from '@nestjs/common';
+import { User } from 'src/modules/users/entities/user.entity';
 
 @Injectable()
 export class UserEvents {
@@ -19,6 +20,7 @@ export class UserEvents {
 
   @OnEvent('user.deleted')
   async handleUserDeleted(userId: number) {
+  
     await this.notificationsService.handleUserEvent(userId, 'deleted');
   }
 }

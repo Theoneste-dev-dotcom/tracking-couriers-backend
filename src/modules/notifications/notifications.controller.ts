@@ -87,11 +87,17 @@ export class NotificationsController {
     return this.notificationsService.getNotificationByType(type);
   }
 
-  @Put("/company/:companyId/mark-as-read")
-async markCompanyNotificationsAsRead(@Param('companyId') companyId: number) {
-  return this.notificationsService.markNotificationsAsRead(companyId);
+  // marking all users notifications as read
+  @Put("/company/:userId/mark-all-read")
+async markAllUserNotificationsAsRead(@Param('userId') userId: number) {
+  return this.notificationsService.markAllUsersAsRead(userId);
 }
 
+//updateing one user notification to read
+@Put('/company/:userId/:notificationId/read')
+async markUsernotificationAsRead(@Param('userId') userId:number, @Param('notificationId') notificationId:number) {
+ return this.notificationsService.markUserNotificationAsRead(userId, notificationId);
+}
 
 
   @Get("/company/:companyId")

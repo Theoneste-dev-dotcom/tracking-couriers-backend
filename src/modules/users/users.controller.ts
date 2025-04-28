@@ -137,7 +137,8 @@ export class UsersController {
   @Roles(Role.ADMIN, Role.CLIENT, Role.COMPANY_OWNER)
   @Delete(':id')
   remove(@Param('id') id: number, @Request() req) {
-    return this.usersService.deleteUserById(id, req.user.sub);
+    if(id) return this.usersService.deleteUserById(id, req.user.sub);
+    else throw new NotFoundException('User not found');
   }
 
   // @Post(':id/assign-role')

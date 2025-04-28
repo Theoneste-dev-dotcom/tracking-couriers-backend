@@ -10,14 +10,14 @@ import { NotificationsService } from './notifServices.service';
 import { NotificationsGateway } from './notification.gateway';
 import { NotificationService } from './notifications.service';
 import { AuthGuard } from '../auth/auth.guard';
+import { UserNotification } from './entities/user-notification.entity';
 
 @Module({
   imports:[
-    TypeOrmModule.forFeature([Notification]),
+    TypeOrmModule.forFeature([Notification, UserNotification]),
     CompaniesModule,
     forwardRef(()=>AuthModule),
     forwardRef(()=> UsersModule),
-  
   ],
   controllers: [NotificationsController],
   providers: [NotificationsService, UserEvents, NotificationsGateway, NotificationService, AuthGuard],

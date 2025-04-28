@@ -1,5 +1,5 @@
 // notifications/notifications.service.ts
-import { Injectable } from '@nestjs/common';
+import { ConsoleLogger, Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -9,12 +9,16 @@ import { CompaniesService } from '../companies/companies.service';
 import { NotificationType } from 'src/common/enums/notitication-type.enum';
 import { NotificationsGateway } from './notification.gateway';
 import { Role } from 'src/common/enums/role.enum';
+import { User } from '../users/entities/user.entity';
+import { UserNotification } from './entities/user-notification.entity';
 
 @Injectable()
 export class NotificationsService {
   constructor(
     @InjectRepository(Notification)
     private readonly notificationRepo: Repository<Notification>,
+    @InjectRepository(UserNotification)
+    private readonly userNotificationRepo: Repository<UserNotification>,
     private readonly companyService: CompaniesService,
     private readonly userService: UserService,
     private readonly eventEmitter: EventEmitter2,
@@ -40,8 +44,12 @@ export class NotificationsService {
     ]);
 
 
-    console.log("recipients are => ", recipients)
-  
+    const userNotification = recipients.map(user=> ({
+      notification, user
+    }))
+
+    await this.userNotificationRepo.save(userNotification);
+
     // Send via WebSocket
     recipients.forEach(user => {
       this.notificationsGateway.sendToUser( notification, user?.id);
@@ -63,6 +71,17 @@ export class NotificationsService {
       message
     );
   }
+  async handleDeletionEvent(user: User, companyId:number, action: 'added' | 'updated' | 'deleted') {
+    const company = await this.companyService.findCompany(companyId);
+    
+    if (!company) return;
 
-  // Add other event handlers similarly
+    const message = `User ${user.name} has been ${action} successfully`;
+    return this.createAndSendNotification(
+      company.id,
+      NotificationType.USER,
+      message
+    );
+  }
+
 }

@@ -649,8 +649,11 @@ export class UserService {
     const user = await this.user_repo.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
 
+
+     await this.eventEmitter.emitAsync('user.deleted', user.id);
+
      await this.user_repo.remove(user);
-    this.eventEmitter.emit('user.deleted', userId);
+   
     return 'User deleted successfully';
   }
   private validateDeletionPermissions(user: User, currentUser: User): Boolean {

@@ -75,7 +75,6 @@ export class NotificationsGateway
   }
 
   sendToUser(notification: any, userId?: number) {
-    console.log('notification sent to user =>', userId, notification);
     if (!userId) return;
     const clientId = this.connectedUsers.get(userId);
     if (clientId) {
